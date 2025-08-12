@@ -1,0 +1,22 @@
+To setup an application follow below.
+------------------------------------
+Step 1: npx create-next-app@latest trading-dashboard-new --typescript --tailwind --eslint --app
+Step 2: Navigate to project
+cd trading-dashboard-new
+Step 3: Create Component Architecture Folders
+mkdir -p src/components/features/{dashboard,watchlist,news,analysis,auth}
+mkdir -p src/components/ui/{button,input,table,modal,card}
+mkdir -p src/components/layout/{header,sidebar,footer,navigation}
+mkdir -p src/components/shared/{loaders,error,icons,providers}
+Step 4: Create lib structure
+mkdir -p src/lib/{utils,api,hooks,constants}
+Step 5: Create types structure
+mkdir -p src/types/features
+Step 6: Create config structure
+mkdir -p src/config
+Step 7: Create styles structure
+mkdir -p src/styles
+Step 8: Install Required Dependencies
+npm install clsx tailwind-merge lucide-react lodash @types/lodash
+Step 9: Test the setup
+npm run dev
