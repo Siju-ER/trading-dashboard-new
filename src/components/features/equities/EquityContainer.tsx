@@ -172,7 +172,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useApiData } from '@/lib/hooks/seApiData';
+import { useApiData } from '@/lib/hooks/useApiData';
 import { API_BASE_URL } from '@/config';
 import SearchInput from '@/components/shared/filters/SearchInput';
 import FilterSection from '@/components/shared/filters/FilterSection';

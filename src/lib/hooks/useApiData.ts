@@ -112,18 +112,28 @@ export function useApiData<T = any>({
 
       const result = await response.json();
 
-      if (result.status === 'success') {
-        setData(result.data || []);
-        if (result.pagination) {
-          setPaginationState(prev => ({
+// Handle both wrapped and direct array responses
+if (Array.isArray(result)) {
+    // Direct array response (your case)
+    setData(result);
+    setPaginationState(prev => ({
+        ...prev,
+        totalPages: Math.ceil(result.length / prev.perPage),
+        totalRecords: result.length,
+    }));
+} else if (result.status === 'success') {
+    // Wrapped response format
+    setData(result.data || []);
+    if (result.pagination) {
+        setPaginationState(prev => ({
             ...prev,
             totalPages: result.pagination.total_pages,
             totalRecords: result.pagination.total_records,
-          }));
-        }
-      } else {
-        throw new Error(result.message || 'API request failed');
-      }
+        }));
+    }
+} else {
+    throw new Error(result.message || 'API request failed');
+}
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setData([]);

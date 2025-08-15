@@ -25,6 +25,8 @@ interface MarketData {
   isOpen: boolean;
   currency: string;
   impact?: string;
+  countryCode?: string; // Add country code for flags
+  country?: string; // Add country name
 }
 
 interface QuoteData {
@@ -63,6 +65,7 @@ const MARKET_INDICES = [
     name: 'S&P 500', 
     region: 'US', 
     country: 'United States',
+    countryCode: 'US',
     impact: 'High'
   },
   { 
@@ -71,6 +74,7 @@ const MARKET_INDICES = [
     name: 'Dow Jones Industrial Average', 
     region: 'US', 
     country: 'United States',
+    countryCode: 'US',
     impact: 'High'
   },
   { 
@@ -79,6 +83,7 @@ const MARKET_INDICES = [
     name: 'NASDAQ Composite', 
     region: 'US', 
     country: 'United States',
+    countryCode: 'US',
     impact: 'High'
   },
   { 
@@ -87,6 +92,7 @@ const MARKET_INDICES = [
     name: 'Russell 2000', 
     region: 'US', 
     country: 'United States',
+    countryCode: 'US',
     impact: 'Medium'
   },
 
@@ -97,6 +103,7 @@ const MARKET_INDICES = [
     name: 'FTSE 100', 
     region: 'Europe', 
     country: 'United Kingdom',
+    countryCode: 'GB',
     impact: 'High'
   },
   { 
@@ -105,6 +112,7 @@ const MARKET_INDICES = [
     name: 'DAX Performance Index', 
     region: 'Europe', 
     country: 'Germany',
+    countryCode: 'DE',
     impact: 'High'
   },
   { 
@@ -113,6 +121,7 @@ const MARKET_INDICES = [
     name: 'CAC 40', 
     region: 'Europe', 
     country: 'France',
+    countryCode: 'FR',
     impact: 'Medium'
   },
 
@@ -123,6 +132,7 @@ const MARKET_INDICES = [
     name: 'Nikkei 225', 
     region: 'Asia', 
     country: 'Japan',
+    countryCode: 'JP',
     impact: 'High'
   },
   { 
@@ -131,6 +141,7 @@ const MARKET_INDICES = [
     name: 'Hang Seng Index', 
     region: 'Asia', 
     country: 'Hong Kong',
+    countryCode: 'HK',
     impact: 'Very High'
   },
   { 
@@ -139,6 +150,7 @@ const MARKET_INDICES = [
     name: 'Shanghai Composite', 
     region: 'Asia', 
     country: 'China',
+    countryCode: 'CN',
     impact: 'Very High'
   },
   { 
@@ -147,6 +159,7 @@ const MARKET_INDICES = [
     name: 'Straits Times Index', 
     region: 'Asia', 
     country: 'Singapore',
+    countryCode: 'SG',
     impact: 'Medium'
   },
   { 
@@ -155,6 +168,7 @@ const MARKET_INDICES = [
     name: 'Taiwan Weighted Index', 
     region: 'Asia', 
     country: 'Taiwan',
+    countryCode: 'TW',
     impact: 'Medium'
   },
   { 
@@ -163,6 +177,7 @@ const MARKET_INDICES = [
     name: 'KOSPI Composite Index', 
     region: 'Asia', 
     country: 'South Korea',
+    countryCode: 'KR',
     impact: 'Medium'
   },
 
@@ -173,6 +188,7 @@ const MARKET_INDICES = [
     name: 'Nifty 50', 
     region: 'India', 
     country: 'India',
+    countryCode: 'IN',
     impact: 'Reference'
   },
   { 
@@ -181,6 +197,7 @@ const MARKET_INDICES = [
     name: 'BSE Sensex', 
     region: 'India', 
     country: 'India',
+    countryCode: 'IN',
     impact: 'Reference'
   },
 
@@ -191,6 +208,7 @@ const MARKET_INDICES = [
     name: 'Crude Oil WTI Futures', 
     region: 'Global', 
     country: 'Global',
+    countryCode: '🌍', // Special emoji for global commodities
     impact: 'Very High'
   },
   { 
@@ -199,6 +217,7 @@ const MARKET_INDICES = [
     name: 'Gold Futures', 
     region: 'Global', 
     country: 'Global',
+    countryCode: '🌍',
     impact: 'High'
   },
 
@@ -209,6 +228,7 @@ const MARKET_INDICES = [
     name: 'BOVESPA Index', 
     region: 'Americas', 
     country: 'Brazil',
+    countryCode: 'BR',
     impact: 'Medium'
   },
 
@@ -219,9 +239,91 @@ const MARKET_INDICES = [
     name: 'All Ordinaries', 
     region: 'Oceania', 
     country: 'Australia',
+    countryCode: 'AU',
     impact: 'Medium'
   }
 ];
+
+// Country flag component using flag emoji
+const CountryFlag: React.FC<{ countryCode: string; size?: 'sm' | 'md' | 'lg' }> = ({ 
+  countryCode, 
+  size = 'md' 
+}) => {
+  // Special handling for global/emoji flags
+  if (countryCode === '🌍') {
+    return <span className={`${size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-xl' : 'text-base'}`}>{countryCode}</span>;
+  }
+
+  // Convert country code to flag emoji
+  const getFlagEmoji = (code: string) => {
+    const codePoints = code
+      .toUpperCase()
+      .split('')
+      .map(char => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+  };
+
+  const sizeClasses = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-xl'
+  };
+
+  return (
+    <span 
+      className={`${sizeClasses[size]} select-none`}
+      title={countryCode}
+    >
+      {getFlagEmoji(countryCode)}
+    </span>
+  );
+};
+
+// Alternative flag component using Flagpack CDN (if you prefer SVG flags)
+const FlagIcon: React.FC<{ countryCode: string; size?: number }> = ({ 
+  countryCode, 
+  size = 24 
+}) => {
+  // Special handling for global commodities
+  if (countryCode === '🌍') {
+    return (
+      <div 
+        className="flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-green-500"
+        style={{ width: size, height: size }}
+      >
+        <span className="text-white text-xs">🌍</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={`https://flagpack.xyz/flags/svg/${countryCode.toLowerCase()}.svg`}
+      alt={`${countryCode} flag`}
+      width={size}
+      height={size}
+      className="rounded-sm object-cover"
+      onError={(e) => {
+        // Fallback to emoji flag if SVG fails to load
+        const target = e.target as HTMLImageElement;
+        target.style.display = 'none';
+        const parent = target.parentElement;
+        if (parent) {
+          parent.innerHTML = `<span class="text-sm">${getFlagEmoji(countryCode)}</span>`;
+        }
+      }}
+    />
+  );
+};
+
+// Helper function for emoji flags (for fallback)
+const getFlagEmoji = (code: string) => {
+  const codePoints = code
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
 
 const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) => {
   const [markets, setMarkets] = useState<MarketData[]>([]);
@@ -233,30 +335,31 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
 
   // Get market metadata for a symbol
   const getMarketMeta = (apiSymbol: string) => {
-  // First try to find by API symbol
-  let market = MARKET_INDICES.find(m => m.apiSymbol === apiSymbol);
-  
-  // If not found, try by regular symbol
-  if (!market) {
-    market = MARKET_INDICES.find(m => m.symbol === apiSymbol);
-  }
-  
-  // If still not found, try partial matching
-  if (!market) {
-    market = MARKET_INDICES.find(m => 
-      apiSymbol.includes(m.symbol.replace('^', '').replace('%5E', ''))
-    );
-  }
-  
-  return market || {
-    symbol: apiSymbol,
-    apiSymbol: apiSymbol,
-    name: apiSymbol,
-    region: 'Unknown',
-    country: 'Unknown',
-    impact: 'Low'
+    // First try to find by API symbol
+    let market = MARKET_INDICES.find(m => m.apiSymbol === apiSymbol);
+    
+    // If not found, try by regular symbol
+    if (!market) {
+      market = MARKET_INDICES.find(m => m.symbol === apiSymbol);
+    }
+    
+    // If still not found, try partial matching
+    if (!market) {
+      market = MARKET_INDICES.find(m => 
+        apiSymbol.includes(m.symbol.replace('^', '').replace('%5E', ''))
+      );
+    }
+    
+    return market || {
+      symbol: apiSymbol,
+      apiSymbol: apiSymbol,
+      name: apiSymbol,
+      region: 'Unknown',
+      country: 'Unknown',
+      countryCode: '❓',
+      impact: 'Low'
+    };
   };
-};
 
   // Determine market status based on timezone and current time
   const getMarketStatus = (exchangeTimezoneName: string, marketState: string) => {
@@ -284,68 +387,69 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
   };
 
   const fetchMarketData = async () => {
-  setIsRefreshing(true);
-  setError(null);
-  
-  try {
-    // Use apiSymbol for the API call
-    const symbols = MARKET_INDICES.map(index => index.apiSymbol).join(',');
+    setIsRefreshing(true);
+    setError(null);
     
-    const response = await fetch(
-      `https://yahoo-finance15.p.rapidapi.com/api/yahoo/qu/quote/${symbols}`, {
-      headers: {
-        'X-RapidAPI-Key': RAPID_API_KEY,
-        'X-RapidAPI-Host': 'yahoo-finance15.p.rapidapi.com'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result: ApiResponse = await response.json();
-    
-    if (result.meta.status === 200 && result.body) {
-      const formattedData: MarketData[] = result.body
-        .filter(quote => quote && quote.regularMarketPrice) // Filter out invalid data
-        .map((quote: QuoteData) => {
-          const marketMeta = getMarketMeta(quote.symbol);
-          
-          return {
-            symbol: marketMeta.name,
-            name: quote.shortName || marketMeta.name,
-            price: quote.regularMarketPrice || 0,
-            change: quote.regularMarketChange || 0,
-            changePercent: quote.regularMarketChangePercent || 0,
-            volume: quote.regularMarketVolume || 0,
-            region: marketMeta.region,
-            isOpen: getMarketStatus(quote.exchangeTimezoneName, quote.marketState),
-            currency: quote.currency || 'USD',
-            impact: marketMeta.impact
-          };
-        })
-        .filter(market => market.region !== 'Unknown'); // Filter out unknown markets
+    try {
+      // Use apiSymbol for the API call
+      const symbols = MARKET_INDICES.map(index => index.apiSymbol).join(',');
       
-      setMarkets(formattedData);
-      setLastUpdated(new Date(result.meta.processedTime || Date.now()));
-    } else {
-      throw new Error('Failed to fetch market data');
-    }
-  } catch (err) {
-    console.error('Error fetching market data:', err);
-    setError(err instanceof Error ? err.message : 'Failed to fetch market data');
-  } finally {
-    setIsLoading(false);
-    setIsRefreshing(false);
-  }
-};
+      const response = await fetch(
+        `https://yahoo-finance15.p.rapidapi.com/api/yahoo/qu/quote/${symbols}`, {
+        headers: {
+          'X-RapidAPI-Key': RAPID_API_KEY,
+          'X-RapidAPI-Host': 'yahoo-finance15.p.rapidapi.com'
+        }
+      });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: ApiResponse = await response.json();
+      
+      if (result.meta.status === 200 && result.body) {
+        const formattedData: MarketData[] = result.body
+          .filter(quote => quote && quote.regularMarketPrice) // Filter out invalid data
+          .map((quote: QuoteData) => {
+            const marketMeta = getMarketMeta(quote.symbol);
+            
+            return {
+              symbol: marketMeta.name,
+              name: quote.shortName || marketMeta.name,
+              price: quote.regularMarketPrice || 0,
+              change: quote.regularMarketChange || 0,
+              changePercent: quote.regularMarketChangePercent || 0,
+              volume: quote.regularMarketVolume || 0,
+              region: marketMeta.region,
+              isOpen: getMarketStatus(quote.exchangeTimezoneName, quote.marketState),
+              currency: quote.currency || 'USD',
+              impact: marketMeta.impact,
+              countryCode: marketMeta.countryCode,
+              country: marketMeta.country
+            };
+          })
+          .filter(market => market.region !== 'Unknown'); // Filter out unknown markets
+        
+        setMarkets(formattedData);
+        setLastUpdated(new Date(result.meta.processedTime || Date.now()));
+      } else {
+        throw new Error('Failed to fetch market data');
+      }
+    } catch (err) {
+      console.error('Error fetching market data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch market data');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     fetchMarketData();
     
     // Refresh data every 5 minutes
-    const interval = setInterval(fetchMarketData, 3000);
+    const interval = setInterval(fetchMarketData, 300000);
     return () => clearInterval(interval);
   }, []);
 
@@ -433,14 +537,27 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
           </div>
         </div>
 
-        {/* Market name and symbol */}
+        {/* Market name and symbol with flag */}
         <div className="mb-3">
-          <h3 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:text-blue-500 transition-colors line-clamp-1`}>
-            {market.symbol}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            {/* Country Flag */}
+            {market.countryCode && (
+              <div className="flex-shrink-0">
+                <CountryFlag countryCode={market.countryCode} size="md" />
+              </div>
+            )}
+            <h3 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:text-blue-500 transition-colors line-clamp-1 flex-1`}>
+              {market.symbol}
+            </h3>
+          </div>
           <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} truncate`}>
             {market.name}
           </p>
+          {market.country && market.country !== 'Unknown' && (
+            <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'} mt-1`}>
+              {market.country}
+            </p>
+          )}
         </div>
 
         {/* Price */}
@@ -620,6 +737,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
       </div>
 
       {/* Footer */}
+      {/* Footer - Continuation from previous artifact */}
       <div className={`px-6 py-3 border-t ${isDarkMode ? 'border-slate-700 bg-slate-900/30' : 'border-slate-200 bg-slate-50/30'}`}>
         <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} flex items-center justify-between`}>
           <div className="flex items-center gap-2">

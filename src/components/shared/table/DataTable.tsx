@@ -6,7 +6,7 @@ import { ArrowUpDownIcon } from '@/components/shared/icons';
 import TableLoader from '@/components/shared/loaders/TableLoader';
 
 export interface Column<T = any> {
-  field: keyof T;
+  field: keyof T | string;
   label: string;
   sortable?: boolean;
   render?: (value: any, item: T) => ReactNode;

@@ -11,7 +11,8 @@ import {
   SettingsIcon, 
   ScannerIcon, 
   WatchlistIcon, 
-  PortfolioIcon 
+  PortfolioIcon, 
+  WishlistIcon
 } from '@/components/shared/icons';
 
 // Toggle Arrow Icon
@@ -32,10 +33,11 @@ const menuItems = [
   { id: 'news', label: 'Market News', icon: NewsIcon, path: '/news' },
   { id: 'portfolio', label: 'Portfolio', icon: PortfolioIcon, path: '/portfolio' },
   { id: 'analysis', label: 'Analysis', icon: AnalysisIcon, path: '/analysis' },
-  { id: 'scanner', label: 'Scanner', icon: ScannerIcon, path: '/scanner' },
-  { id: 'watchlist', label: 'Watchlist', icon: WatchlistIcon, path: '/watchlist' },
+  { id: 'scanner', label: 'Scanner', icon: ScannerIcon, path: '/ui/scanner' },
+  { id: 'watchlist', label: 'Watchlist', icon: WatchlistIcon, path: '/ui/watchlist' },
+  { id: 'wishlist', label: 'Wishlist', icon: WishlistIcon, path: '/ui/wishlist' },
   { id: 'breakout', label: 'Breakout', icon: BreakoutIcon, path: '/breakout' },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon, path: '/settings' },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon, path: '/ui/settings' },
 ];
 
 export default function Sidebar() {

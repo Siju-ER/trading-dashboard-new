@@ -6,9 +6,11 @@ import { FilterIcon, XIcon } from '@/components/shared/icons';
 interface FilterField {
   name: string;
   label: string;
-  type: 'text' | 'date' | 'select';
+  type: 'text' | 'date' | 'select' | 'number';
   placeholder?: string;
   options?: { value: string; label: string }[];
+  min?: number;
+  max?: number;
 }
 
 interface FilterSectionProps {
@@ -33,47 +35,60 @@ const FilterSection: React.FC<FilterSectionProps> = ({
   customActions,
 }) => {
   const renderField = (field: FilterField) => {
-    const baseClassName = "w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+  const baseClassName = "w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+  
+  switch (field.type) {
+    case 'select':
+      return (
+        <select
+          value={String(values[field.name] || '')}
+          onChange={(e) => onChange(field.name, e.target.value)}
+          className={baseClassName}
+        >
+          <option value="">{field.placeholder || `Select ${field.label}`}</option>
+          {field.options?.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      );
     
-    switch (field.type) {
-      case 'select':
-        return (
-          <select
-            value={String(values[field.name] || '')}
-            onChange={(e) => onChange(field.name, e.target.value)}
-            className={baseClassName}
-          >
-            <option value="">{field.placeholder || `Select ${field.label}`}</option>
-            {field.options?.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        );
-      
-      case 'date':
-        return (
-          <input
-            type="date"
-            value={String(values[field.name] || '')}
-            onChange={(e) => onChange(field.name, e.target.value)}
-            className={baseClassName}
-          />
-        );
-      
-      default:
-        return (
-          <input
-            type="text"
-            placeholder={field.placeholder || `Filter by ${field.label}`}
-            value={String(values[field.name] || '')}
-            onChange={(e) => onChange(field.name, e.target.value)}
-            className={baseClassName}
-          />
-        );
-    }
-  };
+    case 'date':
+      return (
+        <input
+          type="date"
+          value={String(values[field.name] || '')}
+          onChange={(e) => onChange(field.name, e.target.value)}
+          className={baseClassName}
+        />
+      );
+    
+    case 'number':
+      return (
+        <input
+          type="number"
+          placeholder={field.placeholder || `Enter ${field.label}`}
+          value={String(values[field.name] || '')}
+          onChange={(e) => onChange(field.name, parseInt(e.target.value) || 0)}
+          min={field.min}
+          max={field.max}
+          className={baseClassName}
+        />
+      );
+    
+    default:
+      return (
+        <input
+          type="text"
+          placeholder={field.placeholder || `Filter by ${field.label}`}
+          value={String(values[field.name] || '')}
+          onChange={(e) => onChange(field.name, e.target.value)}
+          className={baseClassName}
+        />
+      );
+  }
+};
 
   return (
     <>
