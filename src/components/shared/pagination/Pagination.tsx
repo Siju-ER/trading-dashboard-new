@@ -88,9 +88,9 @@ const Pagination: React.FC<PaginationProps> = ({
   const endRecord = totalRecords && perPage ? Math.min(currentPage * perPage, totalRecords) : null;
 
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 border border-slate-200 dark:border-slate-700 ${className}`}>
+    <div className={`bg-white rounded-lg shadow-sm p-4 mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 border border-slate-200 ${className}`}>
       {showInfo && startRecord && endRecord && totalRecords && (
-        <div className="text-sm text-slate-600 dark:text-slate-400">
+        <div className="text-sm text-slate-600">
           Showing {startRecord} to {endRecord} of {totalRecords} entries
         </div>
       )}
@@ -101,8 +101,8 @@ const Pagination: React.FC<PaginationProps> = ({
           disabled={currentPage === 1}
           className={`${sizeClasses.nav} rounded-md ${
             currentPage === 1
-              ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+              ? 'text-slate-300 cursor-not-allowed'
+              : 'text-slate-700 hover:bg-slate-100'
           }`}
           aria-label="Previous page"
         >
@@ -118,13 +118,13 @@ const Pagination: React.FC<PaginationProps> = ({
                 className={`${sizeClasses.button} rounded-md ${
                   currentPage === page
                     ? 'bg-blue-500 text-white'
-                    : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
                 {page}
               </button>
             ) : (
-              <span key={index} className={`${sizeClasses.button} text-slate-500 dark:text-slate-400`}>
+              <span key={index} className={`${sizeClasses.button} text-slate-500`}>
                 {page}
               </span>
             )
@@ -136,8 +136,8 @@ const Pagination: React.FC<PaginationProps> = ({
           disabled={currentPage === totalPages}
           className={`${sizeClasses.nav} rounded-md ${
             currentPage === totalPages
-              ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+              ? 'text-slate-300 cursor-not-allowed'
+              : 'text-slate-700 hover:bg-slate-100'
           }`}
           aria-label="Next page"
         >

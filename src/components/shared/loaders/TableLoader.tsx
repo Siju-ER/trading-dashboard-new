@@ -14,7 +14,7 @@ const TableLoader: React.FC<TableLoaderProps> = ({ rows = 5, columns = 7 }) => {
           {Array.from({ length: columns }).map((_, colIndex) => (
             <div 
               key={colIndex} 
-              className="h-4 bg-slate-200 dark:bg-slate-700 rounded flex-1"
+              className="h-4 bg-slate-200 rounded flex-1"
             />
           ))}
         </div>

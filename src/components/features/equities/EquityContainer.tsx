@@ -240,7 +240,7 @@ const EquityContainer: React.FC = () => {
       render: (value, item) => (
         <button
           onClick={() => router.push(`/dashboard/analysis?symbol=${item.symbol}`)}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
         >
           {value}
         </button>
@@ -249,13 +249,13 @@ const EquityContainer: React.FC = () => {
     {
       field: 'company_name',
       label: 'Company Name',
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
     {
       field: 'current_price',
       label: 'Current Price',
       render: (value) => (
-        <span className="font-medium text-slate-900 dark:text-white">
+        <span className="font-medium text-slate-900">
           ₹{value.toFixed(2)}
         </span>
       ),
@@ -263,22 +263,22 @@ const EquityContainer: React.FC = () => {
     {
       field: 'face_value',
       label: 'Face Value',
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
     {
       field: 'sector',
       label: 'Sector',
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
     {
       field: 'industry',
       label: 'Industry',
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
     {
       field: 'listing_date',
       label: 'Listed Date',
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
   ];
 
@@ -303,20 +303,20 @@ const EquityContainer: React.FC = () => {
       <div className="flex justify-between items-center mb-2">
         <button
           onClick={() => router.push(`/dashboard/analysis?symbol=${equity.symbol}`)}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
         >
           {equity.symbol}
         </button>
-        <span className="text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-full">
+        <span className="text-sm font-medium bg-blue-50 text-blue-600 px-2 py-1 rounded-full">
           ₹{equity.current_price.toFixed(2)}
         </span>
       </div>
       
-      <h3 className="text-sm text-slate-800 dark:text-slate-200 font-medium mb-2">
+      <h3 className="text-sm text-slate-800 font-medium mb-2">
         {equity.company_name}
       </h3>
       
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 dark:text-slate-400">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600">
         <div>
           <span className="font-medium">Face Value:</span> {equity.face_value}
         </div>
@@ -336,7 +336,7 @@ const EquityContainer: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
         <div className="flex flex-col sm:flex-row gap-4">
           <SearchInput
             value={searchTerm}

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ServerIcon, SettingsIcon, NetworkIcon } from '@/components/shared/icons';
+import { ServerIcon, SettingsIcon, NetworkIcon, MoonIcon, SunIcon } from '@/components/shared/icons';
 import ProcessStatus from '@/components/features/settings/ProcessStatus';
+import { useTheme } from '@/components/shared/providers/ThemeProvider';
 // import ApiSettings from '@/components/features/settings/ApiSettings';
 
 interface TabProps {
@@ -13,6 +14,7 @@ interface TabProps {
 
 const SettingsContainer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('system');
+  const { theme, toggleTheme } = useTheme();
   
   const tabs: TabProps[] = [
     { id: 'system', label: 'System Status', icon: ServerIcon },
@@ -32,6 +34,14 @@ const SettingsContainer: React.FC = () => {
             Manage your system configuration and API settings
           </p>
         </div>
+        <button
+          onClick={toggleTheme}
+          className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+          <span>{theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}</span>
+        </button>
       </div>
       
       {/* Tab Container */}

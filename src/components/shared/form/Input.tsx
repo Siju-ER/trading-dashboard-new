@@ -78,19 +78,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   // Variant styles
   const variantStyles = {
     default: cn(
-      'border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-lg',
+      'border border-slate-300 bg-white rounded-lg',
       'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
     ),
     outlined: cn(
-      'border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-700 rounded-lg',
+      'border-2 border-slate-400 bg-white rounded-lg',
       'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
     ),
     filled: cn(
-      'border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-lg',
-      'focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-700'
+      'border border-slate-200 bg-slate-50 rounded-lg',
+      'focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white'
     ),
     underlined: cn(
-      'border-0 border-b-2 border-slate-300 dark:border-slate-600 bg-transparent rounded-none px-0',
+      'border-0 border-b-2 border-slate-300 bg-transparent rounded-none px-0',
       'focus:border-blue-500'
     ),
   };
@@ -124,7 +124,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       )}>
         {/* Prefix */}
         {prefix && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium pointer-events-none">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium pointer-events-none">
             {prefix}
           </div>
         )}
@@ -132,7 +132,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         {/* Left Icon */}
         {leftIcon && (
           <div className={cn(
-            'absolute top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none',
+            'absolute top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none',
             prefix ? 'left-8' : 'left-3',
             sizeStyles[size].icon
           )}>
@@ -168,11 +168,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
             props.onBlur?.(e);
           }}
           className={cn(
-            'w-full text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400',
+            'w-full text-slate-900 placeholder-slate-500',
             'transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed',
             sizeStyles[size].input,
             variantStyles[variant],
-            error && 'border-red-500 dark:border-red-400 focus:border-red-500 focus:ring-red-500',
+            error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
             
             // Padding adjustments for icons and affixes
             prefix && 'pl-8',
@@ -194,7 +194,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
             type="button"
             onClick={onClear}
             className={cn(
-              'absolute top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+              'absolute top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600',
               shouldShowPasswordToggle ? 'right-8' : 'right-3',
               sizeStyles[size].icon
             )}
@@ -211,7 +211,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className={cn(
-              'absolute top-1/2 -translate-y-1/2 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+              'absolute top-1/2 -translate-y-1/2 right-3 text-slate-400 hover:text-slate-600',
               sizeStyles[size].icon
             )}
           >
@@ -231,7 +231,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         {/* Right Icon */}
         {rightIcon && !shouldShowClear && !shouldShowPasswordToggle && !loading && (
           <div className={cn(
-            'absolute top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none',
+            'absolute top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none',
             suffix ? 'right-8' : 'right-3',
             sizeStyles[size].icon
           )}>
@@ -241,7 +241,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
 
         {/* Suffix */}
         {suffix && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm font-medium pointer-events-none">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium pointer-events-none">
             {suffix}
           </div>
         )}
@@ -250,7 +250,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       {/* Error Message */}
       {error && (
         <p className={cn(
-          'mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1',
+          'mt-2 text-sm text-red-600 flex items-center gap-1',
           errorClassName
         )}>
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -263,7 +263,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       {/* Helper Text */}
       {helperText && !error && (
         <p className={cn(
-          'mt-2 text-sm text-slate-500 dark:text-slate-400',
+          'mt-2 text-sm text-slate-500',
           helperClassName
         )}>
           {helperText}

@@ -38,9 +38,9 @@ const TablePagination: React.FC<TablePaginationProps> = ({
 }) => {
   // Variant styles
   const variantStyles = {
-    default: 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700',
+    default: 'bg-white border border-slate-200',
     minimal: 'bg-transparent',
-    outlined: 'bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600',
+    outlined: 'bg-white border-2 border-slate-300',
   };
 
   // Size styles
@@ -111,19 +111,19 @@ const TablePagination: React.FC<TablePaginationProps> = ({
       {/* Left side - Record count and per page select */}
       <div className="flex items-center gap-4">
         {showRecordCount && (
-          <div className="text-slate-600 dark:text-slate-400">
+          <div className="text-slate-600">
             Showing {startRecord} to {endRecord} of {totalRecords} entries
           </div>
         )}
         
         {showPerPageSelect && onPerPageChange && (
           <div className="flex items-center gap-2">
-            <span className="text-slate-600 dark:text-slate-400">Show</span>
+            <span className="text-slate-600">Show</span>
             <select
               value={perPage}
               onChange={(e) => onPerPageChange(Number(e.target.value))}
               className={cn(
-                'border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white',
+                'border border-slate-300 rounded-md bg-white text-slate-900',
                 buttonSizes[size]
               )}
             >
@@ -133,7 +133,7 @@ const TablePagination: React.FC<TablePaginationProps> = ({
                 </option>
               ))}
             </select>
-            <span className="text-slate-600 dark:text-slate-400">entries</span>
+            <span className="text-slate-600">entries</span>
           </div>
         )}
       </div>
@@ -148,8 +148,8 @@ const TablePagination: React.FC<TablePaginationProps> = ({
               'rounded-md transition-colors',
               buttonSizes[size],
               currentPage === 1
-                ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ? 'text-slate-300 cursor-not-allowed'
+                : 'text-slate-700 hover:bg-slate-100'
             )}
             aria-label="Previous page"
           >
@@ -167,13 +167,13 @@ const TablePagination: React.FC<TablePaginationProps> = ({
                     buttonSizes[size],
                     currentPage === page
                       ? 'bg-blue-500 text-white'
-                      : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                   )}
                 >
                   {page}
                 </button>
               ) : (
-                <span key={index} className={cn('text-slate-500 dark:text-slate-400', buttonSizes[size])}>
+                <span key={index} className={cn('text-slate-500', buttonSizes[size])}>
                   {page}
                 </span>
               )
@@ -187,8 +187,8 @@ const TablePagination: React.FC<TablePaginationProps> = ({
               'rounded-md transition-colors',
               buttonSizes[size],
               currentPage === totalPages
-                ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ? 'text-slate-300 cursor-not-allowed'
+                : 'text-slate-700 hover:bg-slate-100'
             )}
             aria-label="Next page"
           >

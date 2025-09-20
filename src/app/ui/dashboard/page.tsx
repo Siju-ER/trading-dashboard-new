@@ -156,10 +156,10 @@ const DashboardContainer: React.FC = () => {
         
         <div className="space-y-8">
           {/* Global Markets - Full Width */}
-          <MarketOverview isDarkMode={true} />
+          <MarketOverview />
           
           {/* Institutional Activity - Full Width */}
-          <InstitutionalActivity isDarkMode={true} />
+          <InstitutionalActivity />
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApiData } from '@/lib/hooks/useApiData';
 import { API_BASE_URL } from '@/config';
@@ -75,7 +75,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
     initialFilters: isWishlist ? { add_to_wishlist: 'true' } : {},
   });
 
-  // Filter field definitions using your FilterSection format
+  // Enhanced filter field definitions with beautiful calendar components
   const filterFields = [
     {
       name: 'trend',
@@ -102,29 +102,43 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       ],
     },
     {
+      name: 'date_range',
+      label: 'Date Range',
+      type: 'dateRange' as const,
+      placeholder: 'Select date range',
+      minDate: new Date(2020, 0, 1),
+      maxDate: new Date(),
+    },
+    {
       name: 'start_date',
       label: 'Start Date',
       type: 'date' as const,
+      placeholder: 'Select start date',
+      minDate: new Date(2020, 0, 1),
+      maxDate: new Date(),
     },
     {
       name: 'end_date',
       label: 'End Date',
       type: 'date' as const,
+      placeholder: 'Select end date',
+      minDate: new Date(2020, 0, 1),
+      maxDate: new Date(),
     },
   ];
 
-  // Calculate percentage change
-  const calculatePercentageChange = (currentPrice: number | undefined, closePrice: number) => {
+  // Memoized calculation functions for better performance
+  const calculatePercentageChange = useCallback((currentPrice: number | undefined, closePrice: number) => {
     if (!currentPrice || !closePrice) return { value: 'N/A', isPositive: null };
     const change = ((currentPrice - closePrice) / closePrice) * 100;
     return { value: change.toFixed(2), isPositive: change >= 0 };
-  };
+  }, []);
 
-  const calculateFollowingPercentageChange = (followingPrice: number | undefined, currentPrice: number | undefined) => {
+  const calculateFollowingPercentageChange = useCallback((followingPrice: number | undefined, currentPrice: number | undefined) => {
     if (!followingPrice || !currentPrice) return { value: 'N/A', isPositive: null };
     const change = ((currentPrice - followingPrice) / followingPrice) * 100;
     return { value: change.toFixed(2), isPositive: change >= 0 };
-  };
+  }, []);
 
   // Get trend badge variant
   const getTrendVariant = (trend: string): 'success' | 'danger' | 'warning' | 'neutral' => {
@@ -145,14 +159,14 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
     }
   };
 
-  // Handle actions
-  const handleViewDetails = (item: WatchlistItem, content: 'news' | 'notes' | 'investment_case') => {
+  // Memoized action handlers for better performance
+  const handleViewDetails = useCallback((item: WatchlistItem, content: 'news' | 'notes' | 'investment_case') => {
     setSelectedItem(item);
     setModalContent(content);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: string | { $oid: string }) => {
+  const handleDelete = useCallback(async (id: string | { $oid: string }) => {
     if (!id) return;
 
     try {
@@ -172,9 +186,9 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       console.error('Error removing item from watchlist:', error);
       alert('An error occurred while removing the item');
     }
-  };
+  }, [refetch]);
 
-  const handleToggleWishlist = async (item: WatchlistItem) => {
+  const handleToggleWishlist = useCallback(async (item: WatchlistItem) => {
     try {
       const response = await fetch(`${API_BASE_URL}/watchlist/${item._id}`, {
         method: 'PUT',
@@ -194,7 +208,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       console.error('Error updating wishlist:', error);
       alert('An error occurred while updating wishlist');
     }
-  };
+  }, [refetch]);
 
   const handleClearFilters = () => {
     updateFilter('trend', '');
@@ -203,8 +217,8 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
     updateFilter('end_date', '');
   };
 
-  // Table column definitions using your DataTable format
-  const columns: Column<WatchlistItem>[] = [
+  // Memoized table column definitions for better performance
+  const columns: Column<WatchlistItem>[] = useMemo(() => [
     {
       field: 'symbol',
       label: 'Symbol',
@@ -213,7 +227,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
         <div className="flex items-center space-x-2">
           <button
             onClick={() => router.push(`/dashboard/analysis?symbol=${item.symbol}`)}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+            className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
           >
             {value}
           </button>
@@ -233,16 +247,17 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       label: 'Date Added',
       sortable: true,
       render: (value) => formatDate(value),
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
     {
       field: 'close',
       label: 'Logged Price',
       render: (value) => (
-        <span className="font-medium text-slate-900 dark:text-white">
+        <span className="font-medium text-slate-900">
           ₹{value.toFixed(2)}
         </span>
       ),
+      className: 'text-right',
     },
     {
       field: 'current_price',
@@ -251,21 +266,21 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       render: (value, item) => {
         const change = calculatePercentageChange(value, item.close);
         return (
-          <div className="flex flex-col">
+          <div className="flex flex-col items-end text-right">
             <span className={`font-medium ${
               change.isPositive === true 
-                ? 'text-green-600 dark:text-green-400' 
+                ? 'text-green-600' 
                 : change.isPositive === false 
-                  ? 'text-red-600 dark:text-red-400' 
-                  : 'text-slate-900 dark:text-white'
+                  ? 'text-red-600' 
+                  : 'text-slate-900'
             }`}>
               ₹{value?.toFixed(2) || '0.00'}
             </span>
             {change.isPositive !== null && (
-              <span className={`text-xs flex items-center ${
+              <span className={`text-xs flex items-center justify-end ${
                 change.isPositive 
-                  ? 'text-green-600 dark:text-green-400' 
-                  : 'text-red-600 dark:text-red-400'
+                  ? 'text-green-600' 
+                  : 'text-red-600'
               }`}>
                 {change.isPositive ? (
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
@@ -278,6 +293,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           </div>
         );
       },
+      className: 'text-right',
     },
     {
       field: 'following_price',
@@ -287,15 +303,15 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
         
         const change = calculateFollowingPercentageChange(value, item.current_price);
         return (
-          <div className="flex flex-col">
-            <span className="font-medium text-slate-900 dark:text-white">
+          <div className="flex flex-col items-end text-right">
+            <span className="font-medium text-slate-900">
               ₹{value.toFixed(2)}
             </span>
             {change.isPositive !== null && (
-              <span className={`text-xs flex items-center ${
+              <span className={`text-xs flex items-center justify-end ${
                 change.isPositive 
-                  ? 'text-green-600 dark:text-green-400' 
-                  : 'text-red-600 dark:text-red-400'
+                  ? 'text-green-600' 
+                  : 'text-red-600'
               }`}>
                 {change.isPositive ? (
                   <ArrowUpIcon className="h-3 w-3 mr-1" />
@@ -308,12 +324,13 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           </div>
         );
       },
+      className: 'text-right',
     },
     {
       field: 'volume',
       label: 'Volume',
       render: (value, item) => formatNumber(item.current_volume || value),
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600 text-right',
     },
     {
       field: 'trend',
@@ -400,10 +417,10 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
         </div>
       ),
     },
-  ];
+  ], [router, calculatePercentageChange, calculateFollowingPercentageChange, getTrendVariant, getFollowStatusVariant, handleViewDetails, handleToggleWishlist, setItemToDelete, setIsDeleteModalOpen]);
 
-  // Mobile card render
-  const renderMobileCard = (item: WatchlistItem) => {
+  // Memoized mobile card render for better performance
+  const renderMobileCard = useCallback((item: WatchlistItem) => {
     const change = calculatePercentageChange(item.current_price, item.close);
 
     return (
@@ -412,7 +429,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           <div className="flex items-center space-x-2">
             <button
               onClick={() => router.push(`/dashboard/analysis?symbol=${item.symbol}`)}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+              className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
             >
               {item.symbol}
             </button>
@@ -430,8 +447,8 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
               <StarIcon 
                 className={`h-4 w-4 ${
                   item.add_to_wishlist 
-                    ? 'text-yellow-400' 
-                    : 'text-gray-400'
+                    ? 'text-yellow-500' 
+                    : 'text-slate-400'
                 }`}
                 filled={item.add_to_wishlist}
               />
@@ -439,38 +456,42 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
             
             <span className={`text-sm font-medium ${
               change.isPositive === true 
-                ? 'text-green-600 dark:text-green-400' 
+                ? 'text-green-600' 
                 : change.isPositive === false 
-                  ? 'text-red-600 dark:text-red-400' 
-                  : 'text-slate-900 dark:text-white'
+                  ? 'text-red-600' 
+                  : 'text-slate-900'
             }`}>
               ₹{item.current_price?.toFixed(2) || '0.00'}
             </span>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 dark:text-slate-400 mb-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 mb-3">
           <div>
-            <span className="font-medium">Logged:</span> ₹{item.close.toFixed(2)}
+            <span className="font-semibold text-slate-700">Logged:</span> 
+            <span className="ml-1 text-slate-900">₹{item.close.toFixed(2)}</span>
           </div>
           <div>
-            <span className="font-medium">Change:</span> 
+            <span className="font-semibold text-slate-700">Change:</span> 
             {change.isPositive !== null && (
-              <span className={`ml-1 ${
+              <span className={`ml-1 font-medium ${
                 change.isPositive 
-                  ? 'text-green-600 dark:text-green-400' 
-                  : 'text-red-600 dark:text-red-400'
+                  ? 'text-green-600' 
+                  : 'text-red-600'
               }`}>
                 {change.isPositive ? '+' : ''}{change.value}%
               </span>
             )}
           </div>
           <div>
-            <span className="font-medium">Following:</span> 
-            {item.following_price ? `₹${item.following_price.toFixed(2)}` : 'N/A'}
+            <span className="font-semibold text-slate-700">Following:</span> 
+            <span className="ml-1 text-slate-900">
+              {item.following_price ? `₹${item.following_price.toFixed(2)}` : 'N/A'}
+            </span>
           </div>
           <div>
-            <span className="font-medium">Date:</span> {formatDate(item.created_at)}
+            <span className="font-semibold text-slate-700">Date:</span> 
+            <span className="ml-1 text-slate-900">{formatDate(item.created_at)}</span>
           </div>
         </div>
         
@@ -479,6 +500,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
             variant="outline"
             size="xs"
             onClick={() => handleViewDetails(item, 'news')}
+            className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
           >
             <EyeIcon className="h-3 w-3 mr-1" />
             News
@@ -488,6 +510,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
             variant="outline"
             size="xs"
             onClick={() => handleViewDetails(item, 'notes')}
+            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
           >
             <EyeIcon className="h-3 w-3 mr-1" />
             Notes
@@ -498,6 +521,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
             size="xs"
             href={`https://www.tradingview.com/chart/?symbol=${item.symbol}`}
             external
+            className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
           >
             <TrendingUpIcon className="h-3 w-3 mr-1" />
             Chart
@@ -510,24 +534,25 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
               setItemToDelete(item);
               setIsDeleteModalOpen(true);
             }}
+            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
           >
-            <TrashIcon className="h-3 w-3 mr-1 text-red-600" />
+            <TrashIcon className="h-3 w-3 mr-1" />
             Delete
           </ActionButton>
         </div>
       </>
     );
-  };
+  }, [router, calculatePercentageChange, getTrendVariant, handleToggleWishlist, handleViewDetails, setItemToDelete, setIsDeleteModalOpen]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-slate-900">
             {isWishlist ? 'Stock Wishlist' : 'Stock Watchlist'}
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
+          <p className="text-sm text-slate-600">
             {isWishlist 
               ? 'Track stocks you want to invest in' 
               : 'Monitor your tracked stocks and price movements'}
@@ -543,14 +568,16 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
         </ActionButton>
       </div>
 
-      {/* Search and Filters */}
-      <div className="space-y-4">
+      {/* Enhanced Search and Filters */}
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <SearchInput
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder={`Search ${isWishlist ? 'wishlist' : 'watchlist'}...`}
             className="flex-1"
+            variant="modern"
+            size="lg"
           />
         </div>
         
@@ -559,8 +586,9 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           isOpen={showFilters}
           onToggle={() => setShowFilters(!showFilters)}
           onClear={handleClearFilters}
-          variant="bordered"
+          variant="modern"
           collapsible
+          activeFiltersCount={Object.values(filters).filter(value => value && String(value).trim() !== '').length}
         >
           <FilterSection
             isVisible={true}
@@ -569,6 +597,8 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
             values={filters}
             onChange={updateFilter}
             onClear={handleClearFilters}
+            variant="modern"
+            showActiveChips={true}
           />
         </FilterPanel>
       </div>
@@ -585,6 +615,9 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
         })}
         mobileCardRender={renderMobileCard}
         emptyMessage={isWishlist ? "No stocks in wishlist" : "No stocks in watchlist"}
+        striped
+        stickyHeader
+        density="compact"
       />
 
       {/* Pagination */}
@@ -621,11 +654,11 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           onClose={() => setIsDeleteModalOpen(false)}
           maxWidth="md"
         >
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
-            <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h3 className="text-xl font-bold mb-4 text-slate-900">
               Remove from {isWishlist ? 'Wishlist' : 'Watchlist'}
             </h3>
-            <p className="mb-6 text-slate-600 dark:text-slate-300">
+            <p className="mb-6 text-slate-600">
               Are you sure you want to remove <span className="font-medium">{itemToDelete.symbol}</span> from your {isWishlist ? 'wishlist' : 'watchlist'}? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
