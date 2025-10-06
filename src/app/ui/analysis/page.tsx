@@ -1,6 +1,10 @@
-// src/app/analysis/page.tsx
-import AnalysisPage from '@/components/features/analysis/page';
+'use client';
 
-export default function Page() {
-  return <AnalysisPage />;
-}
+import React from 'react';
+import { AnalysisContainer } from '@/components/features/analysis';
+
+const AnalysisPage: React.FC = () => {
+  return <AnalysisContainer />;
+};
+
+export default AnalysisPage;

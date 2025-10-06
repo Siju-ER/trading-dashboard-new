@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { BellIcon, SettingsIcon } from '@/components/shared/icons';
 
 interface FeatureProps {
   children: ReactNode;
@@ -9,6 +10,10 @@ interface FeatureProps {
   headerActions?: ReactNode;
   icon?: ReactNode;
   className?: string;
+  showNotifications?: boolean;
+  showSettings?: boolean;
+  onNotificationClick?: () => void;
+  onSettingsClick?: () => void;
 }
 
 export default function Feature({ 
@@ -17,7 +22,11 @@ export default function Feature({
   subtitle, 
   headerActions,
   icon,
-  className = ""
+  className = "",
+  showNotifications = true,
+  showSettings = true,
+  onNotificationClick,
+  onSettingsClick
 }: FeatureProps) {
   return (
     <div className="flex h-screen overflow-hidden">
@@ -25,31 +34,61 @@ export default function Feature({
         <div className={`min-h-screen p-6 ${className}`}>
           {/* Page Header */}
           {(title || subtitle || headerActions) && (
-            <div className="mb-8 flex items-start justify-between">
-              <div>
-                {title && (
-                  <div className="flex items-center gap-3 mb-2">
-                    {icon && (
-                      <div className="text-slate-600">
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-100 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  {icon && (
+                    <div className="p-2 bg-white rounded-lg shadow-sm border border-purple-100">
+                      <div className="text-purple-600">
                         {icon}
                       </div>
+                    </div>
+                  )}
+                  <div>
+                    {title && (
+                      <h1 className="text-2xl font-bold text-slate-900">
+                        {title}
+                      </h1>
                     )}
-                    <h1 className="text-4xl font-bold text-slate-800">
-                      {title}
-                    </h1>
+                    {subtitle && (
+                      <p className="text-sm text-slate-600 mt-1">
+                        {subtitle}
+                      </p>
+                    )}
                   </div>
-                )}
-                {subtitle && (
-                  <p className="text-lg text-slate-600">
-                    {subtitle}
-                  </p>
-                )}
-              </div>
-              {headerActions && (
-                <div className="flex items-center space-x-4">
-                  {headerActions}
                 </div>
-              )}
+                
+                <div className="flex items-center space-x-3">
+                  {/* Custom Header Actions */}
+                  {headerActions && (
+                    <div className="flex items-center space-x-2">
+                      {headerActions}
+                    </div>
+                  )}
+                  
+                  {/* Notification Icon */}
+                  {showNotifications && (
+                    <button
+                      onClick={onNotificationClick}
+                      className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-sm border border-purple-100 hover:shadow-md transition-all duration-200 hover:scale-105"
+                      title="Notifications"
+                    >
+                      <BellIcon className="h-5 w-5 text-slate-600 hover:text-purple-600" />
+                    </button>
+                  )}
+                  
+                  {/* Settings Icon */}
+                  {showSettings && (
+                    <button
+                      onClick={onSettingsClick}
+                      className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-sm border border-purple-100 hover:shadow-md transition-all duration-200 hover:scale-105"
+                      title="Settings"
+                    >
+                      <SettingsIcon className="h-5 w-5 text-slate-600 hover:text-purple-600" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
           

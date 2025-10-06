@@ -241,6 +241,53 @@ const MARKET_INDICES = [
     country: 'Australia',
     countryCode: 'AU',
     impact: 'Medium'
+  },
+
+  // === ADDITIONAL MAJOR MARKETS ===
+  { 
+    symbol: '^MXX', 
+    apiSymbol: '%5EMXX',
+    name: 'IPC Mexico', 
+    region: 'Americas', 
+    country: 'Mexico',
+    countryCode: 'MX',
+    impact: 'Medium'
+  },
+  { 
+    symbol: '^GSPTSE', 
+    apiSymbol: '%5EGSPTSE',
+    name: 'S&P/TSX Composite', 
+    region: 'Americas', 
+    country: 'Canada',
+    countryCode: 'CA',
+    impact: 'Medium'
+  },
+  { 
+    symbol: '^N100', 
+    apiSymbol: '%5EN100',
+    name: 'Euronext 100', 
+    region: 'Europe', 
+    country: 'Netherlands',
+    countryCode: 'NL',
+    impact: 'Medium'
+  },
+  { 
+    symbol: '^SSMI', 
+    apiSymbol: '%5ESSMI',
+    name: 'Swiss Market Index', 
+    region: 'Europe', 
+    country: 'Switzerland',
+    countryCode: 'CH',
+    impact: 'Medium'
+  },
+  { 
+    symbol: '^MERV', 
+    apiSymbol: '%5EMERV',
+    name: 'MERVAL Index', 
+    region: 'Americas', 
+    country: 'Argentina',
+    countryCode: 'AR',
+    impact: 'Low'
   }
 ];
 
@@ -488,30 +535,54 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
     }
   };
 
+  // Country color mapping for flag-inspired accents
+  const getCountryColors = (countryCode: string) => {
+    const colorMap: { [key: string]: { primary: string; secondary: string; accent: string } } = {
+      'US': { primary: 'from-red-500/10', secondary: 'to-blue-500/10', accent: 'border-red-500/20' },
+      'GB': { primary: 'from-red-500/10', secondary: 'to-blue-500/10', accent: 'border-red-500/20' },
+      'DE': { primary: 'from-yellow-500/10', secondary: 'to-red-500/10', accent: 'border-yellow-500/20' },
+      'FR': { primary: 'from-blue-500/10', secondary: 'to-red-500/10', accent: 'border-blue-500/20' },
+      'JP': { primary: 'from-red-500/10', secondary: 'to-white/10', accent: 'border-red-500/20' },
+      'HK': { primary: 'from-red-500/10', secondary: 'to-blue-500/10', accent: 'border-red-500/20' },
+      'CN': { primary: 'from-red-500/10', secondary: 'to-yellow-500/10', accent: 'border-red-500/20' },
+      'SG': { primary: 'from-red-500/10', secondary: 'to-white/10', accent: 'border-red-500/20' },
+      'TW': { primary: 'from-red-500/10', secondary: 'to-blue-500/10', accent: 'border-red-500/20' },
+      'KR': { primary: 'from-blue-500/10', secondary: 'to-red-500/10', accent: 'border-blue-500/20' },
+      'IN': { primary: 'from-orange-500/10', secondary: 'to-green-500/10', accent: 'border-orange-500/20' },
+      'BR': { primary: 'from-green-500/10', secondary: 'to-yellow-500/10', accent: 'border-green-500/20' },
+      'AU': { primary: 'from-blue-500/10', secondary: 'to-red-500/10', accent: 'border-blue-500/20' },
+      'MX': { primary: 'from-green-500/10', secondary: 'to-red-500/10', accent: 'border-green-500/20' },
+      'CA': { primary: 'from-red-500/10', secondary: 'to-white/10', accent: 'border-red-500/20' },
+      'NL': { primary: 'from-red-500/10', secondary: 'to-blue-500/10', accent: 'border-red-500/20' },
+      'CH': { primary: 'from-red-500/10', secondary: 'to-white/10', accent: 'border-red-500/20' },
+      'AR': { primary: 'from-blue-500/10', secondary: 'to-white/10', accent: 'border-blue-500/20' },
+      '🌍': { primary: 'from-blue-500/10', secondary: 'to-green-500/10', accent: 'border-blue-500/20' }
+    };
+    return colorMap[countryCode] || { primary: 'from-slate-500/10', secondary: 'to-slate-600/10', accent: 'border-slate-500/20' };
+  };
+
   const MarketCard = ({ market, index }: { market: MarketData; index: number }) => {
     const isPositive = market.change >= 0;
     const [isHovered, setIsHovered] = useState(false);
+    const countryColors = getCountryColors(market.countryCode || '');
 
     return (
       <div 
-        className={`relative overflow-hidden rounded-xl p-4 transition-all duration-500 hover:scale-105 ${
+        className={`relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] ${
           isDarkMode 
-            ? 'bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 hover:border-slate-600' 
-            : 'bg-gradient-to-br from-white to-slate-50 border border-slate-200 hover:border-slate-300'
-        } shadow-lg hover:shadow-xl group`}
-        style={{ animationDelay: `${index * 0.1}s` }}
+            ? `bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 hover:border-slate-600` 
+            : `bg-gradient-to-br from-white to-slate-50 border border-slate-200 hover:border-slate-300`
+        } shadow-sm hover:shadow-md group`}
+        style={{ animationDelay: `${index * 0.05}s` }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Animated background gradient */}
-        <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${
-          isPositive ? 'bg-gradient-to-r from-emerald-500 to-blue-500' : 'bg-gradient-to-r from-rose-500 to-orange-500'
-        }`}></div>
-
-        {/* Status and Impact indicators */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
+        {/* Flag-inspired background accent */}
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${countryColors.primary} ${countryColors.secondary}`}></div>
+        {/* Header with status and region */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full ${
               market.isOpen 
                 ? 'bg-emerald-500 animate-pulse' 
                 : isDarkMode ? 'bg-slate-500' : 'bg-slate-400'
@@ -524,88 +595,86 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
           </div>
           
           <div className="flex gap-1">
-            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+            <div className={`px-1.5 py-0.5 rounded text-xs font-medium border ${
               isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'
-            }`}>
+            } ${countryColors.accent}`}>
               {market.region}
             </div>
             {market.impact && (
-              <div className={`px-2 py-1 rounded-full text-xs font-medium ${getImpactColor(market.impact)}`}>
+              <div className={`px-1.5 py-0.5 rounded text-xs font-medium ${getImpactColor(market.impact)}`}>
                 {market.impact}
               </div>
             )}
           </div>
         </div>
 
-        {/* Market name and symbol with flag */}
-        <div className="mb-3">
-          <div className="flex items-center gap-2 mb-1">
-            {/* Country Flag */}
-            {market.countryCode && (
-              <div className="flex-shrink-0">
-                <CountryFlag countryCode={market.countryCode} size="md" />
-              </div>
-            )}
-            <h3 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:text-blue-500 transition-colors line-clamp-1 flex-1`}>
+        {/* Market info with flag and symbol */}
+        <div className="flex items-center gap-2 mb-2">
+          {market.countryCode && (
+            <div className="flex-shrink-0">
+              <CountryFlag countryCode={market.countryCode} size="sm" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'} group-hover:text-blue-500 transition-colors truncate`}>
               {market.symbol}
             </h3>
-          </div>
-          <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} truncate`}>
-            {market.name}
-          </p>
-          {market.country && market.country !== 'Unknown' && (
-            <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'} mt-1`}>
-              {market.country}
+            <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} truncate`}>
+              {market.name}
             </p>
-          )}
+          </div>
         </div>
 
-        {/* Price */}
-        <div className="mb-3">
-          <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} transition-transform duration-300 ${
+        {/* Price and change in one row */}
+        <div className="flex items-center justify-between mb-2">
+          <div className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'} transition-transform duration-300 ${
             isHovered ? 'scale-105' : ''
           }`}>
             {market.currency} {formatNumber(market.price)}
           </div>
+          <div className={`flex items-center gap-1 px-2 py-1 rounded ${
+            isPositive 
+              ? isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-50' 
+              : isDarkMode ? 'bg-rose-900/30' : 'bg-rose-50'
+          }`}>
+            <div className={`${
+              isPositive 
+                ? isDarkMode ? 'text-emerald-400' : 'text-emerald-600' 
+                : isDarkMode ? 'text-rose-400' : 'text-rose-600'
+            } transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>
+              {isPositive ? <TrendingUpIcon className="w-3 h-3" /> : <TrendingDownIcon className="w-3 h-3" />}
+            </div>
+            <div className={`font-semibold text-xs ${
+              isPositive 
+                ? isDarkMode ? 'text-emerald-400' : 'text-emerald-600' 
+                : isDarkMode ? 'text-rose-400' : 'text-rose-600'
+            }`}>
+              {isPositive ? '+' : ''}{market.changePercent.toFixed(2)}%
+            </div>
+          </div>
         </div>
 
-        {/* Change */}
-        <div className={`flex items-center gap-2 p-2 rounded-lg ${
-          isPositive 
-            ? isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-50' 
-            : isDarkMode ? 'bg-rose-900/30' : 'bg-rose-50'
-        }`}>
-          <div className={`${
-            isPositive 
-              ? isDarkMode ? 'text-emerald-400' : 'text-emerald-600' 
-              : isDarkMode ? 'text-rose-400' : 'text-rose-600'
-          } transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}>
-            {isPositive ? <TrendingUpIcon /> : <TrendingDownIcon />}
+        {/* Volume and change amount */}
+        <div className="flex items-center justify-between text-xs">
+          <div className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'} flex items-center gap-1`}>
+            <GlobeIcon className="w-3 h-3" />
+            <span>{formatVolume(market.volume)}</span>
           </div>
-          <div className={`font-semibold text-sm ${
+          <div className={`font-medium ${
             isPositive 
               ? isDarkMode ? 'text-emerald-400' : 'text-emerald-600' 
               : isDarkMode ? 'text-rose-400' : 'text-rose-600'
           }`}>
-            {isPositive ? '+' : ''}{formatNumber(market.change)} ({isPositive ? '+' : ''}{market.changePercent.toFixed(2)}%)
+            {isPositive ? '+' : ''}{formatNumber(market.change)}
           </div>
         </div>
 
-        {/* Volume */}
-        {market.volume > 0 && (
-          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-            <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} flex items-center gap-1`}>
-              <GlobeIcon />
-              Volume: {formatVolume(market.volume)}
-            </div>
-          </div>
-        )}
-
-        {/* Hover overlay effect */}
-        <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${
+        {/* Hover overlay effect with flag colors */}
+        <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br ${countryColors.primary} ${countryColors.secondary}`}></div>
+        <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${
           isPositive 
-            ? 'shadow-[0_0_30px_rgba(16,185,129,0.4)]' 
-            : 'shadow-[0_0_30px_rgba(248,113,113,0.4)]'
+            ? 'shadow-[0_0_20px_rgba(16,185,129,0.3)]' 
+            : 'shadow-[0_0_20px_rgba(248,113,113,0.3)]'
         }`}></div>
       </div>
     );
@@ -622,9 +691,9 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
             <div className={`h-6 w-48 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded`}></div>
             <div className={`h-8 w-8 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded`}></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className={`h-48 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-xl`}></div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map((i) => (
+              <div key={i} className={`h-32 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-lg`}></div>
             ))}
           </div>
         </div>
@@ -721,7 +790,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({ isDarkMode = false }) =
 
       {/* Markets Grid */}
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
           {filteredMarkets.map((market, index) => (
             <MarketCard key={market.symbol} market={market} index={index} />
           ))}

@@ -51,42 +51,42 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     default: 'bg-white border border-slate-200 shadow-sm',
     bordered: 'bg-white border-2 border-slate-300 shadow-sm',
     elevated: 'bg-white border border-slate-200 shadow-lg',
-    modern: 'bg-gradient-to-r from-white to-slate-50 border border-slate-200 shadow-lg backdrop-blur-sm',
+    modern: 'bg-white border border-slate-200 shadow-sm rounded-xl',
   };
 
   return (
     <div className={cn('rounded-xl transition-all duration-300', variantStyles[variant], className)}>
-      {/* Enhanced Header */}
+      {/* Compact Header */}
       <div className={cn(
-        'p-5 flex items-center justify-between transition-all duration-200',
+        'p-4 flex items-center justify-between transition-all duration-200',
         collapsible && 'cursor-pointer hover:bg-slate-50/50',
         isOpen && 'border-b border-slate-200',
         headerClassName
       )} onClick={collapsible ? handleToggle : undefined}>
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-            <FilterIcon className="w-5 h-5" />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-blue-50 text-blue-600">
+            <FilterIcon className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 text-lg">{title}</h3>
+            <h3 className="font-semibold text-slate-900 text-base">{title}</h3>
             {showActiveCount && activeFiltersCount > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 {activeFiltersCount} active
               </span>
             )}
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {onClear && activeFiltersCount > 0 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onClear();
               }}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all duration-200 flex items-center gap-2"
+              className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-all duration-200 flex items-center gap-1"
             >
-              <XIcon className="w-4 h-4" />
+              <XIcon className="w-3 h-3" />
               <span>{clearButtonText}</span>
             </button>
           )}
@@ -97,22 +97,22 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 e.stopPropagation();
                 handleToggle();
               }}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition-all duration-200"
+              className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition-all duration-200"
             >
               {isOpen ? (
-                <ChevronUpIcon className="w-5 h-5" />
+                <ChevronUpIcon className="w-4 h-4" />
               ) : (
-                <ChevronDownIcon className="w-5 h-5" />
+                <ChevronDownIcon className="w-4 h-4" />
               )}
             </button>
           )}
         </div>
       </div>
       
-      {/* Enhanced Content */}
+      {/* Compact Content */}
       {isOpen && (
         <div className={cn(
-          'p-6 bg-white/50 backdrop-blur-sm',
+          'p-4 bg-slate-50/50',
           contentClassName
         )}>
           {children}

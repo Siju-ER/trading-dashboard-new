@@ -1,30 +1,22 @@
 'use client';
 
-import React from 'react';
-import WatchlistContainer from '@/components/features/watchlist/WatchlistContainer';
-import Feature from '@/components/features/Feature';
-import { WatchlistIcon } from '@/components/shared/icons';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function WatchlistPage() {
-  const headerActions = (
-    <div className="flex space-x-3">
-      <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-        Export Data
-      </button>
-      <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-        Add to Watchlist
-      </button>
+export default function WishlistPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to watchlist page since wishlist functionality is now integrated there
+    router.replace('/ui/watchlist');
+  }, [router]);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Redirecting to Watchlist...</p>
+      </div>
     </div>
   );
-  return (
-    <Feature 
-      title="Watchlist"
-      subtitle="Browse and analyze equities that you added to your watchlist"
-      headerActions={headerActions}
-      icon={<WatchlistIcon />}
-    >
-      <WatchlistContainer isWishlist />
-    </Feature>
-  );
-
 }

@@ -18,9 +18,9 @@ export default function WatchlistPage() {
   );
   return (
     <Feature 
-      title="Scanner"
-      subtitle="Browse and analyze equities that you added to your watchlist"
-      headerActions={headerActions}
+      // title="Scanner"
+      // subtitle="Browse and analyze equities that you added to your watchlist"
+      // headerActions={headerActions}
       icon={<ScannerIcon />}
     >
       <TechnicalScanner />

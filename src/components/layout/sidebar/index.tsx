@@ -11,8 +11,8 @@ import {
   SettingsIcon, 
   ScannerIcon, 
   WatchlistIcon, 
-  PortfolioIcon, 
-  WishlistIcon
+  PortfolioIcon,
+  ShoppingBasketIcon
 } from '@/components/shared/icons';
 
 // Toggle Arrow Icon
@@ -30,13 +30,14 @@ const ChevronIcon = ({ isExpanded }: { isExpanded: boolean }) => (
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/ui/dashboard' },
   { id: 'equities', label: 'Equities', icon: EquitiesIcon, path: '/ui/equities' },
-  { id: 'news', label: 'Market News', icon: NewsIcon, path: '/news' },
+  { id: 'news', label: 'Market News', icon: NewsIcon, path: '/ui/news' },
+  { id: 'stock-news', label: 'Stock In News', icon: NewsIcon, path: '/ui/stock-news' },
+  { id: 'my-bucket', label: 'Basket', icon: ShoppingBasketIcon, path: '/ui/my-bucket' },
   { id: 'portfolio', label: 'Portfolio', icon: PortfolioIcon, path: '/portfolio' },
-  { id: 'analysis', label: 'Analysis', icon: AnalysisIcon, path: '/analysis' },
+  { id: 'analysis', label: 'Analysis', icon: AnalysisIcon, path: '/ui/analysis' },
   { id: 'scanner', label: 'Scanner', icon: ScannerIcon, path: '/ui/scanner' },
   { id: 'watchlist', label: 'Watchlist', icon: WatchlistIcon, path: '/ui/watchlist' },
-  { id: 'wishlist', label: 'Wishlist', icon: WishlistIcon, path: '/ui/wishlist' },
-  { id: 'breakout', label: 'Breakout', icon: BreakoutIcon, path: '/breakout' },
+  { id: 'breakout', label: 'Breakout', icon: BreakoutIcon, path: '/ui/breakouts' },
   { id: 'settings', label: 'Settings', icon: SettingsIcon, path: '/ui/settings' },
 ];
 

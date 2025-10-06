@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -15,12 +15,22 @@ import {
   AlertTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ArrowUpRightIcon
+  ArrowUpRightIcon,
+  XIcon
 } from '@/components/shared/icons';
 import { API_BASE_URL } from '@/config';
 import ActionButton from '@/components/shared/ui/button/ActionButton';
 import Badge from '@/components/shared/ui/badge/Badge';
 import Modal from '@/components/shared/ui/modal/Modal';
+import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
+import EnhancedCalendar from '@/components/shared/ui/calendar/EnhancedCalendar';
+
+// Stock interface for search results
+interface Stock {
+  symbol: string;
+  company_name: string;
+  current_price?: number;
+}
 
 const timeframes = [
   { value: '1D', label: '1 Day' },
@@ -133,6 +143,140 @@ const SupportResistanceScanner: React.FC = () => {
   const [hoverData, setHoverData] = useState<any>(null);
   const [isTimeframeDropdownOpen, setIsTimeframeDropdownOpen] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'warning' | 'error' } | null>(null);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+
+  // Stock search states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Stock[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter fields for compact filter bar
+  const filterFields = [
+    {
+      name: 'timeframe',
+      label: 'Timeframe',
+      type: 'select' as const,
+      placeholder: 'Select timeframe',
+      options: timeframes.map(tf => ({ value: tf.value, label: tf.label })),
+    },
+    {
+      name: 'analysisType',
+      label: 'Analysis Type',
+      type: 'select' as const,
+      placeholder: 'Select type',
+      options: [
+        { value: 'extrema', label: 'Extrema' },
+        { value: 'pivot', label: 'Pivot Points' },
+        { value: 'fibonacci', label: 'Fibonacci' },
+      ],
+    },
+    {
+      name: 'chartType',
+      label: 'Chart Type',
+      type: 'select' as const,
+      placeholder: 'Select chart',
+      options: [
+        { value: 'line', label: 'Line Chart' },
+        { value: 'candlestick', label: 'Candlestick' },
+        { value: 'area', label: 'Area Chart' },
+      ],
+    },
+  ];
+
+  const filterValues = {
+    timeframe,
+    analysisType,
+    chartType,
+  };
+
+  const updateFilter = (key: string, value: string | number | boolean) => {
+    switch (key) {
+      case 'timeframe':
+        setTimeframe(value as string);
+        break;
+      case 'analysisType':
+        setAnalysisType(value as string);
+        break;
+      case 'chartType':
+        setChartType(value as string);
+        break;
+    }
+  };
+
+  const handleClearFilters = () => {
+    setTimeframe('3M');
+    setAnalysisType('extrema');
+    setChartType('line');
+  };
+
+  // Stock search functions
+  const searchStocks = async (value: string) => {
+    if (value.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/equity?search_field=symbol&search_value=${value}`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setSearchResults(data.data);
+        setShowDropdown(true);
+      } else {
+        setError('Failed to fetch results. Please try again.');
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching stocks:', error);
+      setError('An error occurred while searching. Please try again.');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    searchStocks(value);
+  };
+
+  const handleStockSelect = (stock: Stock) => {
+    setSelectedStock(stock);
+    setSearchTerm(`${stock.symbol} - ${stock.company_name}`);
+    setShowDropdown(false);
+    setSymbol(stock.symbol);
+    setSymbolInput(stock.symbol);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedStock(null);
+    setSearchTerm('');
+    setSymbol('');
+    setSymbolInput('');
+    setShowDropdown(false);
+  };
+
+  // Handle outside click to close dropdown
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, []);
 
   // Effect to fetch data when symbol changes
   useEffect(() => {
@@ -252,13 +396,10 @@ const SupportResistanceScanner: React.FC = () => {
     return lines;
   };
 
-  // Handle symbol submit
+  // Handle symbol submit (now handled by stock selection)
   const handleSymbolSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (symbolInput.trim()) {
-      const formattedSymbol = symbolInput.trim().toUpperCase();
-      setSymbol(formattedSymbol);
-    }
+    // This function is now handled by handleStockSelect
   };
 
   // Handle timeframe change
@@ -271,7 +412,7 @@ const SupportResistanceScanner: React.FC = () => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="p-3 border border-gray-200 dark:border-gray-700 rounded shadow-lg bg-white dark:bg-gray-800">
+        <div className="p-3 border border-gray-200 rounded shadow-lg bg-white">
           <p className="font-medium text-sm mb-1">{label}</p>
           <div className="space-y-1">
             <p className="text-sm flex items-center">
@@ -298,7 +439,7 @@ const SupportResistanceScanner: React.FC = () => {
               </p>
             )}
             {payload.length > 1 && payload[1] && payload[1].dataKey === 'volume' && (
-              <p className="text-sm mt-1 pt-1 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm mt-1 pt-1 border-t border-gray-200">
                 <span className="font-medium">Volume:</span>
                 <span className="ml-1">{formatNumber(payload[1].value)}</span>
               </p>
@@ -314,7 +455,7 @@ const SupportResistanceScanner: React.FC = () => {
   const VolumeTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="p-2 border border-gray-200 dark:border-gray-700 rounded shadow-lg bg-white dark:bg-gray-800">
+        <div className="p-2 border border-gray-200 rounded shadow-lg bg-white">
           <p className="text-xs">{label}</p>
           <p className="text-xs font-medium">{formatNumber(payload[0].value)}</p>
         </div>
@@ -361,10 +502,10 @@ const SupportResistanceScanner: React.FC = () => {
       {notification && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
           notification.type === 'success' 
-            ? 'bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30' 
+            ? 'bg-green-50 text-green-600 border border-green-200' 
             : notification.type === 'warning'
-              ? 'bg-yellow-50 text-yellow-600 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/30'
-              : 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/30'
+              ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+              : 'bg-red-50 text-red-600 border border-red-200'
         }`}>
           {notification.type === 'success' && <CheckCircleIcon className="h-5 w-5" />}
           {notification.type === 'warning' && <AlertTriangleIcon className="h-5 w-5" />}
@@ -374,51 +515,217 @@ const SupportResistanceScanner: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Support & Resistance Scanner</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Analyze technical patterns and key price levels
-            </p>
-          </div>
-          <ActionButton
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsInfoModalOpen(true)}
-            leftIcon={<AlertTriangleIcon />}
-          >
-            Info
-          </ActionButton>
-        </div>
+      <div className="bg-white rounded-xl shadow-lg">
+        
 
-        {/* Search Form */}
-        <form onSubmit={handleSymbolSubmit} className="flex gap-3">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter stock symbol (e.g., TCS, RELIANCE)"
-              value={symbolInput}
-              onChange={(e) => setSymbolInput(e.target.value)}
-            />
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        {/* Stock Search and Quick Filters */}
+        <div className="space-y-4 p-6">
+          {/* Stock Search */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">
+              Search Stock <span className="text-red-500">*</span>
+            </label>
+            <div className="relative" ref={dropdownRef}>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={() => searchTerm.length >= 2 && setShowDropdown(true)}
+                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                  placeholder="Search by symbol or company name..."
+                  required
+                />
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                {selectedStock && (
+                  <button
+                    type="button"
+                    onClick={handleClearSelection}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full"
+                  >
+                    <XIcon className="h-4 w-4 text-gray-400" />
+                  </button>
+                )}
+              </div>
+
+              {/* Search Results Dropdown */}
+              {showDropdown && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                  {isSearching ? (
+                    <div className="px-4 py-3 text-gray-500">Searching...</div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((stock, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        onClick={() => handleStockSelect(stock)}
+                      >
+                        <div className="font-medium text-gray-800">{stock.symbol}</div>
+                        <div className="text-sm text-gray-500">{stock.company_name}</div>
+                        {stock.current_price && (
+                          <div className="text-xs text-blue-600">Current Price: ₹{stock.current_price}</div>
+                        )}
+                      </button>
+                    ))
+                  ) : searchTerm.length >= 2 ? (
+                    <div className="px-4 py-3 text-gray-500">No stocks found</div>
+                  ) : null}
+                </div>
+              )}
+            </div>
           </div>
-          <ActionButton
-            type="submit"
-            variant="primary"
-            size="sm"
-          >
-            Analyze
-          </ActionButton>
-        </form>
+
+          {/* Quick Filters Row */}
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-slate-700 mr-2">Timeframe:</span>
+            <button
+              onClick={() => setTimeframe('1D')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                timeframe === '1D' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              1D
+            </button>
+            <button
+              onClick={() => setTimeframe('1W')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                timeframe === '1W' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              1W
+            </button>
+            <button
+              onClick={() => setTimeframe('1M')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                timeframe === '1M' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              1M
+            </button>
+            <button
+              onClick={() => setTimeframe('3M')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                timeframe === '3M' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              3M
+            </button>
+            <button
+              onClick={() => setTimeframe('6M')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                timeframe === '6M' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              6M
+            </button>
+            <button
+              onClick={() => setTimeframe('1Y')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                timeframe === '1Y' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              1Y
+            </button>
+            <button
+              onClick={() => setTimeframe('All')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                timeframe === 'All' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              All
+            </button>
+          </div>
+
+          {/* Analysis Type Quick Filters */}
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-slate-700 mr-2">Analysis:</span>
+            <button
+              onClick={() => setAnalysisType('extrema')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                analysisType === 'extrema' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Extrema
+            </button>
+            <button
+              onClick={() => setAnalysisType('pivot')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                analysisType === 'pivot' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Pivot Points
+            </button>
+            <button
+              onClick={() => setAnalysisType('fibonacci')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                analysisType === 'fibonacci' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Fibonacci
+            </button>
+          </div>
+
+          {/* Chart Type Quick Filters */}
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-slate-700 mr-2">Chart:</span>
+            <button
+              onClick={() => setChartType('line')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                chartType === 'line' 
+                  ? 'bg-purple-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Line Chart
+            </button>
+            <button
+              onClick={() => setChartType('candlestick')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                chartType === 'candlestick' 
+                  ? 'bg-purple-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Candlestick
+            </button>
+            <button
+              onClick={() => setChartType('area')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                chartType === 'area' 
+                  ? 'bg-purple-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Area Chart
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Error Display */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-xl flex items-start">
+        <div className="p-4 bg-red-50 text-red-600 rounded-xl flex items-start">
           <AlertTriangleIcon className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
           <div>
             <p className="font-medium">Error loading data</p>
@@ -429,16 +736,16 @@ const SupportResistanceScanner: React.FC = () => {
 
       {/* No Symbol State */}
       {!symbol && !loading && !error && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="mb-8">
-            <div className="mx-auto h-32 w-32 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <div className="mx-auto h-32 w-32 bg-gray-100 rounded-full flex items-center justify-center">
               <BarChart3Icon className="h-16 w-16 text-blue-500" />
             </div>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+          <h3 className="text-xl font-bold text-gray-900 mb-3">
             Support & Resistance Scanner
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
             Find key price levels for your stocks and analyze technical patterns to make better trading decisions
           </p>
           <div className="flex flex-wrap justify-center gap-2">
@@ -452,16 +759,16 @@ const SupportResistanceScanner: React.FC = () => {
 
       {/* Main Chart Section */}
       {validPriceData && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
           {/* Stock Info and Controls */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{symbol}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{symbol}</h1>
               </div>
 
               <div className="flex items-center mt-1">
-                <span className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <span className="text-2xl font-semibold text-gray-900">
                   ₹{priceData[priceData.length - 1].close.toFixed(2)}
                 </span>
                 <div className={`ml-2 flex items-center text-sm ${priceChange.isPositive ? 'text-green-500' : 'text-red-500'}`}>
@@ -477,7 +784,7 @@ const SupportResistanceScanner: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center mt-1 text-xs text-gray-500">
                 <span>
                   {timeframe} · Last updated: {formatDate(priceData[priceData.length - 1].rawDate)}
                 </span>
@@ -497,14 +804,14 @@ const SupportResistanceScanner: React.FC = () => {
                 </ActionButton>
 
                 {isTimeframeDropdownOpen && (
-                  <div className="absolute z-10 mt-1 right-0 w-40 rounded-md shadow-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                  <div className="absolute z-10 mt-1 right-0 w-40 rounded-md shadow-lg bg-white border border-gray-200">
                     <div className="py-1" role="menu" aria-orientation="vertical">
                       {timeframes.map((tf) => (
                         <button
                           key={tf.value}
                           className={`block w-full text-left px-4 py-2 text-sm ${timeframe === tf.value
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                            : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-600'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700 hover:bg-gray-50'
                           }`}
                           onClick={() => handleTimeframeChange(tf.value)}
                         >
@@ -745,16 +1052,16 @@ const SupportResistanceScanner: React.FC = () => {
 
       {/* Technical Indicators Section */}
       {validPriceData && showIndicators && analysisData?.indicators && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Technical Indicators</h3>
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">Technical Indicators</h3>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* RSI Indicator */}
               {analysisData.indicators.rsi !== undefined && (
-                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
                     Relative Strength Index (RSI-14)
                   </h4>
                   <div className="flex justify-between items-center mb-1">
@@ -773,11 +1080,11 @@ const SupportResistanceScanner: React.FC = () => {
                       </Badge>
                     </div>
                   </div>
-                  <div className="relative h-6 bg-gray-200 dark:bg-gray-700 rounded-full mt-2 overflow-hidden">
+                  <div className="relative h-6 bg-gray-200 rounded-full mt-2 overflow-hidden">
                     {/* RSI scale background colors */}
                     <div className="absolute top-0 left-0 right-0 flex h-full">
                       <div className="bg-green-500 flex-grow-0 flex-shrink-0" style={{ width: '30%' }}></div>
-                      <div className="bg-gray-300 dark:bg-gray-600 flex-grow-0 flex-shrink-0" style={{ width: '40%' }}></div>
+                      <div className="bg-gray-300 flex-grow-0 flex-shrink-0" style={{ width: '40%' }}></div>
                       <div className="bg-red-500 flex-grow-0 flex-shrink-0" style={{ width: '30%' }}></div>
                     </div>
 
@@ -805,7 +1112,7 @@ const SupportResistanceScanner: React.FC = () => {
                     <div className="absolute top-0 h-full w-0.5 bg-white opacity-70" style={{ left: '70%' }}></div>
                   </div>
 
-                  <div className="grid grid-cols-4 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <div className="grid grid-cols-4 text-xs text-gray-500 mt-1">
                     <div className="text-left">Oversold</div>
                     <div className="text-center">30</div>
                     <div className="text-center">70</div>
@@ -816,33 +1123,33 @@ const SupportResistanceScanner: React.FC = () => {
 
               {/* MACD Indicator */}
               {analysisData.indicators.macd && (
-                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
                     Moving Average Convergence Divergence (MACD)
                   </h4>
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">MACD Line</div>
+                      <div className="text-xs text-gray-500">MACD Line</div>
                       <div className={`text-lg font-bold ${
                         analysisData.indicators.macd.macd_line > 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
+                          ? 'text-green-600'
+                          : 'text-red-600'
                       }`}>
                         {analysisData.indicators.macd.macd_line.toFixed(2)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Signal Line</div>
-                      <div className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                      <div className="text-xs text-gray-500">Signal Line</div>
+                      <div className="text-lg font-bold text-gray-800">
                         {analysisData.indicators.macd.signal_line.toFixed(2)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Histogram</div>
+                      <div className="text-xs text-gray-500">Histogram</div>
                       <div className={`text-lg font-bold ${
                         analysisData.indicators.macd.histogram > 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
+                          ? 'text-green-600'
+                          : 'text-red-600'
                       }`}>
                         {analysisData.indicators.macd.histogram.toFixed(2)}
                       </div>
@@ -850,7 +1157,7 @@ const SupportResistanceScanner: React.FC = () => {
                   </div>
 
                   {/* MACD Histogram Visualization */}
-                  <div className="flex justify-center items-end h-16 space-x-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-center items-end h-16 space-x-1 pt-2 border-t border-gray-200">
                     {Array(10).fill(0).map((_, index) => {
                       const baseValue = analysisData.indicators.macd.histogram;
                       const randomFactor = 0.2 * (Math.random() - 0.5);
@@ -868,7 +1175,7 @@ const SupportResistanceScanner: React.FC = () => {
                       );
                     })}
                   </div>
-                  <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  <div className="text-center text-xs text-gray-500 mt-2">
                     Histogram (Last 10 periods)
                   </div>
                 </div>
@@ -882,41 +1189,41 @@ const SupportResistanceScanner: React.FC = () => {
       {validPriceData && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Support Levels */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-b border-green-200 dark:border-green-800/30">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
               <div className="flex items-center">
                 <div className="p-1.5 bg-green-500 rounded-md mr-3">
                   <ChevronDownIcon className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-green-800 dark:text-green-300">Support Levels</h3>
+                <h3 className="text-lg font-semibold text-green-800">Support Levels</h3>
               </div>
             </div>
             <div className="p-4">
               {currentAnalysis?.support_levels && Array.isArray(currentAnalysis.support_levels) && currentAnalysis.support_levels.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <table className="min-w-full divide-y divide-gray-200">
                     <thead>
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         {analysisType === 'strength' && (
                           <>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Strength</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tests</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strength</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tests</th>
                           </>
                         )}
                         {analysisType === 'zones' && (
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Touches</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Touches</th>
                         )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody className="divide-y divide-gray-200">
                       {currentAnalysis.support_levels.map((level: any, index: number) => (
-                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
                             {level && typeof level.price === 'number' ? `₹${level.price.toFixed(2)}` : 'N/A'}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                          <td className="px-4 py-3 text-sm text-gray-600">
                             {level.date ? formatDate(level.date) :
                               (level.start_date && level.end_date ?
                                 `${formatDate(level.start_date)} to ${formatDate(level.end_date)}` : 'N/A')}
@@ -926,25 +1233,25 @@ const SupportResistanceScanner: React.FC = () => {
                               <td className="px-4 py-3">
                                 {level && typeof level.strength === 'number' ? (
                                   <>
-                                    <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                                    <div className="w-24 bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                       <div
                                         className="bg-green-500 h-2.5 rounded-full"
                                         style={{ width: `${Math.min(100, level.strength * 10)}%` }}
                                       ></div>
                                     </div>
-                                    <span className="text-xs text-gray-600 dark:text-gray-300 ml-2">
+                                    <span className="text-xs text-gray-600 ml-2">
                                       {level.strength.toFixed(1)}
                                     </span>
                                   </>
                                 ) : 'N/A'}
                               </td>
-                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                              <td className="px-4 py-3 text-sm text-gray-600">
                                 {level && typeof level.tests === 'number' ? level.tests : 'N/A'}
                               </td>
                             </>
                           )}
                           {analysisType === 'zones' && (
-                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                            <td className="px-4 py-3 text-sm text-gray-600">
                               {level && typeof level.touches === 'number' ? level.touches : 'N/A'}
                             </td>
                           )}
@@ -954,7 +1261,7 @@ const SupportResistanceScanner: React.FC = () => {
                   </table>
                 </div>
               ) : (
-                <div className="py-8 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                <div className="py-8 flex flex-col items-center justify-center text-gray-500">
                   <BarChart3Icon className="h-12 w-12 mb-3 opacity-50" />
                   <p>No support levels found for this analysis type</p>
                 </div>
@@ -963,41 +1270,41 @@ const SupportResistanceScanner: React.FC = () => {
           </div>
 
           {/* Resistance Levels */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 border-b border-red-200 dark:border-red-800/30">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-red-50 to-red-100 border-b border-red-200">
               <div className="flex items-center">
                 <div className="p-1.5 bg-red-500 rounded-md mr-3">
                   <ArrowUpRightIcon className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-red-800 dark:text-red-300">Resistance Levels</h3>
+                <h3 className="text-lg font-semibold text-red-800">Resistance Levels</h3>
               </div>
             </div>
             <div className="p-4">
               {currentAnalysis?.resistance_levels && Array.isArray(currentAnalysis.resistance_levels) && currentAnalysis.resistance_levels.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <table className="min-w-full divide-y divide-gray-200">
                     <thead>
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         {analysisType === 'strength' && (
                           <>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Strength</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tests</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strength</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tests</th>
                           </>
                         )}
                         {analysisType === 'zones' && (
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Touches</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Touches</th>
                         )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody className="divide-y divide-gray-200">
                       {currentAnalysis.resistance_levels.map((level: any, index: number) => (
-                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
                             {level && typeof level.price === 'number' ? `₹${level.price.toFixed(2)}` : 'N/A'}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                          <td className="px-4 py-3 text-sm text-gray-600">
                             {level.date ? formatDate(level.date) :
                               (level.start_date && level.end_date ?
                                 `${formatDate(level.start_date)} to ${formatDate(level.end_date)}` : 'N/A')}
@@ -1007,25 +1314,25 @@ const SupportResistanceScanner: React.FC = () => {
                               <td className="px-4 py-3">
                                 {level && typeof level.strength === 'number' ? (
                                   <>
-                                    <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                                    <div className="w-24 bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                       <div
                                         className="bg-red-500 h-2.5 rounded-full"
                                         style={{ width: `${Math.min(100, level.strength * 10)}%` }}
                                       ></div>
                                     </div>
-                                    <span className="text-xs text-gray-600 dark:text-gray-300 ml-2">
+                                    <span className="text-xs text-gray-600 ml-2">
                                       {level.strength.toFixed(1)}
                                     </span>
                                   </>
                                 ) : 'N/A'}
                               </td>
-                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                              <td className="px-4 py-3 text-sm text-gray-600">
                                 {level && typeof level.tests === 'number' ? level.tests : 'N/A'}
                               </td>
                             </>
                           )}
                           {analysisType === 'zones' && (
-                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                            <td className="px-4 py-3 text-sm text-gray-600">
                               {level && typeof level.touches === 'number' ? level.touches : 'N/A'}
                             </td>
                           )}
@@ -1035,7 +1342,7 @@ const SupportResistanceScanner: React.FC = () => {
                   </table>
                 </div>
               ) : (
-                <div className="py-8 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                <div className="py-8 flex flex-col items-center justify-center text-gray-500">
                   <BarChart3Icon className="h-12 w-12 mb-3 opacity-50" />
                   <p>No resistance levels found for this analysis type</p>
                 </div>
@@ -1047,7 +1354,7 @@ const SupportResistanceScanner: React.FC = () => {
 
       {/* Footer Info */}
       {validPriceData && (
-        <div className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 text-center">
+        <div className="text-xs text-gray-500 bg-white rounded-xl shadow-sm p-4 text-center">
           <p>Data as of {formatDate(priceData[priceData.length - 1].rawDate)} | Analysis method: {analysisType.charAt(0).toUpperCase() + analysisType.slice(1)}</p>
           <p className="mt-1">
             Last price: ₹{priceData[priceData.length - 1].close.toFixed(2)} |
@@ -1063,22 +1370,22 @@ const SupportResistanceScanner: React.FC = () => {
           onClose={() => setIsInfoModalOpen(false)}
           maxWidth="md"
         >
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <div className="bg-white p-6 rounded-xl shadow-lg">
             <div className="flex items-center space-x-3 mb-4">
               <div className="flex-shrink-0">
                 <AlertTriangleIcon className="h-6 w-6 text-blue-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h3 className="text-xl font-bold text-gray-900">
                 About Support & Resistance Scanner
               </h3>
             </div>
             
-            <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+            <div className="space-y-4 text-sm text-gray-600">
               <p>
                 This tool analyzes stock price data to identify key support and resistance levels using different technical analysis methodologies.
               </p>
               <div>
-                <h4 className="font-medium mb-1 text-gray-900 dark:text-white">Analysis Types:</h4>
+                <h4 className="font-medium mb-1 text-gray-900">Analysis Types:</h4>
                 <ul className="list-disc list-inside space-y-1 pl-2">
                   <li><span className="font-medium">Extrema:</span> Based on significant price peaks and valleys</li>
                   <li><span className="font-medium">Zones:</span> Identifies areas where price consolidates frequently</li>
@@ -1086,7 +1393,7 @@ const SupportResistanceScanner: React.FC = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-1 text-gray-900 dark:text-white">Chart Types:</h4>
+                <h4 className="font-medium mb-1 text-gray-900">Chart Types:</h4>
                 <ul className="list-disc list-inside space-y-1 pl-2">
                   <li><span className="font-medium">Line:</span> Simple line connecting closing prices</li>
                   <li><span className="font-medium">Area:</span> Line chart with colored area below</li>
@@ -1094,13 +1401,13 @@ const SupportResistanceScanner: React.FC = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-1 text-gray-900 dark:text-white">Indicators:</h4>
+                <h4 className="font-medium mb-1 text-gray-900">Indicators:</h4>
                 <ul className="list-disc list-inside space-y-1 pl-2">
                   <li><span className="font-medium">Support Levels:</span> Price areas where buying pressure exceeds selling pressure</li>
                   <li><span className="font-medium">Resistance Levels:</span> Price areas where selling pressure exceeds buying pressure</li>
                 </ul>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 pt-2 border-t border-gray-200">
                 Data is fetched from API endpoint: {API_BASE_URL}/technical-analysis/scanner/[symbol]
               </p>
             </div>

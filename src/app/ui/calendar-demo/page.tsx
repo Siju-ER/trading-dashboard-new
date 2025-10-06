@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Calendar, DateRangePicker, DateRange } from '@/components/shared/ui/calendar';
+import EnhancedCalendar from '@/components/shared/ui/calendar/EnhancedCalendar';
 import Feature from '@/components/features/Feature';
 import { CalendarIcon } from '@/components/shared/icons';
 
@@ -189,6 +190,50 @@ const CalendarDemo: React.FC = () => {
               variant="modern"
               size="md"
             />
+          </div>
+        </div>
+
+        {/* Enhanced Calendar Component */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Enhanced Calendar Component</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+              <EnhancedCalendar
+                value={selectedDate}
+                onChange={setSelectedDate}
+                placeholder="Enhanced Date Picker"
+                variant="modern"
+                size="md"
+                showQuickSelect={true}
+                showTodayButton={true}
+                showClearButton={true}
+              />
+            </div>
+            <div>
+              <EnhancedCalendar
+                value={selectedDateTime}
+                onChange={setSelectedDateTime}
+                placeholder="With Time Selection"
+                variant="modern"
+                size="md"
+                showTime={true}
+                showQuickSelect={true}
+                showTodayButton={true}
+                showClearButton={true}
+              />
+            </div>
+            <div>
+              <EnhancedCalendar
+                value={selectedDate}
+                onChange={setSelectedDate}
+                placeholder="Minimal Style"
+                variant="minimal"
+                size="md"
+                showQuickSelect={true}
+                showTodayButton={true}
+                showClearButton={true}
+              />
+            </div>
           </div>
         </div>
 

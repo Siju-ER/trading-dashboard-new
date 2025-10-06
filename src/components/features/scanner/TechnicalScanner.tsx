@@ -9,6 +9,7 @@ import {
   ZapIcon,
   PieChartIcon 
 } from '@/components/shared/icons';
+import Feature from '../Feature';
 import SupportResistanceScanner from './SupportResistanceScanner';
 import DeliveryVolumePeaks from './DeliveryVolumePeaks';
 import DeliveryPeaksRSIRange from './DeliveryPeaksRSIRange';
@@ -89,8 +90,8 @@ const TechnicalScanner: React.FC = () => {
         return <AnalysisTracker />;
       case 'momentum':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
-            <div className="text-gray-500 dark:text-gray-400">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="text-gray-500">
               <ZapIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <h3 className="text-xl font-semibold mb-2">Momentum Scanner</h3>
               <p>This feature is coming soon. Stay tuned for momentum-based stock analysis!</p>
@@ -99,8 +100,8 @@ const TechnicalScanner: React.FC = () => {
         );
       case 'fundamental':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
-            <div className="text-gray-500 dark:text-gray-400">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="text-gray-500">
               <PieChartIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <h3 className="text-xl font-semibold mb-2">Fundamental Scanner</h3>
               <p>This feature is coming soon. Stay tuned for fundamental analysis tools!</p>
@@ -112,22 +113,28 @@ const TechnicalScanner: React.FC = () => {
     }
   };
   
+  const handleNotificationClick = () => {
+    console.log('Notifications clicked');
+    // Add notification logic here
+  };
+
+  const handleSettingsClick = () => {
+    console.log('Settings clicked');
+    // Add settings logic here
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Technical Scanner</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Advanced technical analysis tools for stock screening and analysis
-          </p>
-        </div>
-      </div>
-      
+    <Feature
+      title="Technical Scanner"
+      subtitle="Advanced technical analysis tools for stock screening and analysis"
+      icon={<SearchIcon className="h-6 w-6" />}
+      onNotificationClick={handleNotificationClick}
+      onSettingsClick={handleSettingsClick}
+    >
       {/* Tab Container */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100">
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-gray-100">
           <div className="flex overflow-x-auto">
             {tabs.map((tab, index) => {
               const Icon = tab.icon;
@@ -138,16 +145,16 @@ const TechnicalScanner: React.FC = () => {
                   disabled={tab.disabled}
                   className={`px-6 py-4 flex items-center space-x-2 whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === tab.id 
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10' 
+                      ? 'border-blue-500 text-blue-600 bg-blue-50' 
                       : tab.disabled
-                        ? 'border-transparent text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  } ${index < tabs.length - 1 ? 'border-r border-gray-200 dark:border-gray-700' : ''}`}
+                        ? 'border-transparent text-gray-400 cursor-not-allowed'
+                        : 'border-transparent text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  } ${index < tabs.length - 1 ? 'border-r border-gray-200' : ''}`}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium">{tab.label}</span>
                   {tab.comingSoon && (
-                    <span className="ml-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full">
+                    <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-500 rounded-full">
                       Coming Soon
                     </span>
                   )}
@@ -162,7 +169,7 @@ const TechnicalScanner: React.FC = () => {
           {renderTabContent()}
         </div>
       </div>
-    </div>
+    </Feature>
   );
 };
 

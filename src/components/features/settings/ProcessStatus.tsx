@@ -164,7 +164,7 @@ const ProcessStatus: React.FC = () => {
     today.setHours(0, 0, 0, 0);
     const runDate = new Date(lastRunDate);
     runDate.setHours(0, 0, 0, 0);
-    return today.getTime() === runDate.getTime() ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+    return today.getTime() === runDate.getTime() ? 'text-green-600' : 'text-red-600';
   };
 
   const getStatusVariant = (lastRunDate: string): 'success' | 'danger' => {
@@ -211,10 +211,10 @@ const ProcessStatus: React.FC = () => {
       {notification && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
           notification.type === 'success' 
-            ? 'bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30' 
+            ? 'bg-green-50 text-green-600 border border-green-200' 
             : notification.type === 'warning'
-              ? 'bg-yellow-50 text-yellow-600 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/30'
-              : 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/30'
+              ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+              : 'bg-red-50 text-red-600 border border-red-200'
         }`}>
           {notification.type === 'success' && <CheckCircleIcon className="h-5 w-5" />}
           {notification.type === 'warning' && <AlertTriangleIcon className="h-5 w-5" />}
@@ -226,8 +226,8 @@ const ProcessStatus: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">System Status</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <h2 className="text-xl font-semibold text-gray-900">System Status</h2>
+          <p className="text-sm text-gray-600 mt-1">
             Monitor and manage data processing systems
           </p>
         </div>
@@ -245,12 +245,12 @@ const ProcessStatus: React.FC = () => {
 
       {/* System Status Cards */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Data Processing Systems</h3>
+        <h3 className="text-lg font-medium text-gray-900">Data Processing Systems</h3>
         
         {loading && systems.length === 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-gray-100 dark:bg-gray-700 h-24 rounded-lg"></div>
+              <div key={i} className="bg-gray-100 h-24 rounded-lg"></div>
             ))}
           </div>
         ) : (
@@ -267,13 +267,13 @@ const ProcessStatus: React.FC = () => {
               return (
                 <div 
                   key={system.attribute} 
-                  className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800 hover:shadow-md transition-shadow"
+                  className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow"
                 >
-                  <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="px-4 py-3 border-b border-gray-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         {getSystemIcon(system.attribute)}
-                        <h4 className="font-medium text-gray-900 dark:text-white">
+                        <h4 className="font-medium text-gray-900">
                           {formatSystemName(system.attribute)}
                         </h4>
                       </div>
@@ -285,8 +285,8 @@ const ProcessStatus: React.FC = () => {
                   
                   <div className="p-4 flex justify-between items-center">
                     <div className="flex items-center space-x-2">
-                      <ClockIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <ClockIcon className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-500">
                         Last Run: {formattedDate}
                       </span>
                     </div>
@@ -312,19 +312,19 @@ const ProcessStatus: React.FC = () => {
 
       {/* Breakout Scanner Section */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Stock Scanner</h3>
+        <h3 className="text-lg font-medium text-gray-900">Stock Scanner</h3>
         
-        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
-          <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-3 border-b border-blue-100 dark:border-blue-800/30">
+        <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+          <div className="bg-blue-50 px-4 py-3 border-b border-blue-100">
             <div className="flex items-center space-x-2">
-              <SearchIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <h4 className="font-medium text-blue-800 dark:text-blue-300">Breakout Scanner</h4>
+              <SearchIcon className="h-5 w-5 text-blue-600" />
+              <h4 className="font-medium text-blue-800">Breakout Scanner</h4>
             </div>
           </div>
           
           <div className="p-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-sm text-gray-600">
                 Scan for potential breakout stocks based on technical patterns and volume analysis
               </p>
               
@@ -337,8 +337,8 @@ const ProcessStatus: React.FC = () => {
                   <select
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                      bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm
+                    className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg 
+                      bg-white text-gray-900 text-sm
                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   >
@@ -367,8 +367,8 @@ const ProcessStatus: React.FC = () => {
               </div>
             </div>
             
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center text-sm text-gray-500">
                 <Clock3Icon className="h-4 w-4 mr-2" />
                 <span>Scan results will be available in the Breakouts page after processing is complete</span>
               </div>
@@ -379,38 +379,38 @@ const ProcessStatus: React.FC = () => {
 
       {/* System Info */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">System Information</h3>
+        <h3 className="text-lg font-medium text-gray-900">System Information</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+          <div className="p-4 border border-gray-200 rounded-lg bg-white">
             <div className="flex justify-between items-center mb-2">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">CPU Usage</div>
+              <div className="text-sm font-medium text-gray-500">CPU Usage</div>
               <Badge variant="success" size="sm">Healthy</Badge>
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">24%</div>
-            <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full mt-2">
+            <div className="text-2xl font-bold text-gray-900">24%</div>
+            <div className="w-full h-2 bg-gray-100 rounded-full mt-2">
               <div className="h-2 bg-green-500 rounded-full" style={{ width: '24%' }}></div>
             </div>
           </div>
           
-          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+          <div className="p-4 border border-gray-200 rounded-lg bg-white">
             <div className="flex justify-between items-center mb-2">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Memory Usage</div>
+              <div className="text-sm font-medium text-gray-500">Memory Usage</div>
               <Badge variant="warning" size="sm">Moderate</Badge>
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">68%</div>
-            <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full mt-2">
+            <div className="text-2xl font-bold text-gray-900">68%</div>
+            <div className="w-full h-2 bg-gray-100 rounded-full mt-2">
               <div className="h-2 bg-yellow-500 rounded-full" style={{ width: '68%' }}></div>
             </div>
           </div>
           
-          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+          <div className="p-4 border border-gray-200 rounded-lg bg-white">
             <div className="flex justify-between items-center mb-2">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Storage</div>
+              <div className="text-sm font-medium text-gray-500">Storage</div>
               <Badge variant="success" size="sm">Healthy</Badge>
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">42%</div>
-            <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full mt-2">
+            <div className="text-2xl font-bold text-gray-900">42%</div>
+            <div className="w-full h-2 bg-gray-100 rounded-full mt-2">
               <div className="h-2 bg-green-500 rounded-full" style={{ width: '42%' }}></div>
             </div>
           </div>
@@ -427,9 +427,9 @@ const ProcessStatus: React.FC = () => {
           }}
           maxWidth="md"
         >
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Confirm Sync</h3>
-            <p className="mb-6 text-gray-600 dark:text-gray-300">
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Confirm Sync</h3>
+            <p className="mb-6 text-gray-600">
               Are you sure you want to trigger sync for {selectedSystem ? formatSystemName(selectedSystem) : ''}?
               This process will fetch the latest data and may take a few minutes to complete.
             </p>

@@ -26,11 +26,11 @@ const SettingsContainer: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center">
             <SettingsIcon className="h-6 w-6 mr-2 text-blue-600" />
             Settings
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-slate-600 mt-1">
             Manage your system configuration and API settings
           </p>
         </div>
@@ -45,9 +45,9 @@ const SettingsContainer: React.FC = () => {
       </div>
       
       {/* Tab Container */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="border-b border-gray-200">
           <div className="flex overflow-x-auto">
             {tabs.map((tab, index) => {
               const Icon = tab.icon;
@@ -57,9 +57,9 @@ const SettingsContainer: React.FC = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-6 py-4 flex items-center space-x-2 whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === tab.id 
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10' 
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  } ${index < tabs.length - 1 ? 'border-r border-gray-200 dark:border-gray-700' : ''}`}
+                      ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                      : 'border-transparent text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  } ${index < tabs.length - 1 ? 'border-r border-gray-200' : ''}`}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium">{tab.label}</span>

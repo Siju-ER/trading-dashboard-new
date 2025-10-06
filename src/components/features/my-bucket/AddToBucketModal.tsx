@@ -1,29 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { API_BASE_URL } from '@/config';
+import { SearchIcon, XIcon, CalendarIcon, PlusIcon, DollarSignIcon } from '@/components/shared/icons';
 import Modal from '@/components/shared/ui/modal/Modal';
 import ActionButton from '@/components/shared/ui/button/ActionButton';
-import Badge from '@/components/shared/ui/badge/Badge';
-import { 
-  SearchIcon, XIcon, CalendarIcon, PlusIcon, DollarSignIcon,
-  AlertCircleIcon, CheckCircleIcon
-} from '@/components/shared/icons';
+import { Stock, PrefilledData } from '@/types/my-bucket';
+import { API_BASE_URL } from '@/config';
 
-interface Stock {
-  symbol: string;
-  company_name: string;
-  current_price?: number;
-}
-
-interface PrefilledData {
-  symbol?: string;
-  company_name?: string;
-  date?: string;
-  logged_price?: number;
-}
-
-interface AddToBucketModalProps {
+interface AddToBasketModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -31,7 +15,7 @@ interface AddToBucketModalProps {
   prefilledData?: PrefilledData;
 }
 
-const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
+const AddToBasketModal: React.FC<AddToBasketModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
@@ -51,7 +35,6 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -116,8 +99,8 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
         setError('Failed to fetch results. Please try again.');
         setSearchResults([]);
       }
-    } catch (err) {
-      console.error('Error searching stocks:', err);
+    } catch (error) {
+      console.error('Error searching stocks:', error);
       setError('An error occurred while searching. Please try again.');
       setSearchResults([]);
     } finally {
@@ -185,18 +168,14 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
       const data = await response.json();
       
       if (data.status === 'success') {
-        setNotification({ message: 'Successfully added to investment bucket!', type: 'success' });
-        setTimeout(() => {
-          onSuccess();
-          resetForm();
-        }, 1000);
+        onSuccess();
+        resetForm();
       } else {
         setError(data.message || 'Failed to add item to bucket');
       }
-    } catch (err) {
-      console.error('Error adding to bucket:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while adding the item';
-      setError(errorMessage);
+    } catch (error) {
+      console.error('Error adding to bucket:', error);
+      setError('An error occurred while adding the item');
     } finally {
       setIsSubmitting(false);
     }
@@ -214,7 +193,6 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
     setLoggedPrice('');
     setNotes('');
     setError('');
-    setNotification(null);
   };
 
   const handleClose = () => {
@@ -223,55 +201,31 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      maxWidth="2xl"
-    >
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-            Add to Investment Bucket
-          </h3>
-          <ActionButton
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            className="p-2"
-          >
-            <XIcon className="h-5 w-5" />
-          </ActionButton>
-        </div>
-
-        {/* Notification */}
-        {notification && (
-          <div className={`mb-4 p-4 rounded-lg border flex items-center gap-2 ${
-            notification.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
-              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
-          }`}>
-            {notification.type === 'success' ? (
-              <CheckCircleIcon className="h-5 w-5" />
-            ) : (
-              <AlertCircleIcon className="h-5 w-5" />
-            )}
-            <span>{notification.message}</span>
+    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="2xl">
+      <div className="bg-white rounded-xl shadow-lg w-full max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-800">Add to Investment Basket</h3>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <XIcon className="h-5 w-5 text-gray-500" />
+            </button>
           </div>
-        )}
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg flex items-center gap-2">
-            <AlertCircleIcon className="h-5 w-5" />
-            <span>{error}</span>
-          </div>
-        )}
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Stock Search */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label className="block text-sm font-medium text-gray-700">
               Search Stock <span className="text-red-500">*</span>
             </label>
             <div className="relative" ref={dropdownRef}>
@@ -281,56 +235,53 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   onFocus={() => searchTerm.length >= 2 && setShowDropdown(true)}
-                  className={`w-full pl-10 pr-10 py-3 border border-slate-300 dark:border-slate-600 rounded-lg 
-                    bg-white dark:bg-slate-700 text-slate-900 dark:text-white
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                    ${prefilledData?.symbol ? 'bg-slate-50 dark:bg-slate-600' : ''}`}
+                  className={`w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-600 ${
+                    prefilledData?.symbol ? 'bg-gray-50' : ''
+                  }`}
                   placeholder={prefilledData?.symbol ? "Stock pre-selected from analysis" : "Search by symbol or company name..."}
                   readOnly={!!prefilledData?.symbol}
                   required
                 />
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 {selectedStock && !prefilledData?.symbol && (
-                  <ActionButton
-                    variant="ghost"
-                    size="xs"
-                    onClick={handleClearSelection}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+                  <button
                     type="button"
+                    onClick={handleClearSelection}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full"
                   >
-                    <XIcon className="h-4 w-4" />
-                  </ActionButton>
+                    <XIcon className="h-4 w-4 text-gray-400" />
+                  </button>
                 )}
               </div>
 
               {/* Search Results Dropdown */}
               {showDropdown && !prefilledData?.symbol && (
-                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
                   {isSearching ? (
-                    <div className="px-4 py-3 text-slate-500 dark:text-slate-400">Searching...</div>
+                    <div className="px-4 py-3 text-gray-500">Searching...</div>
                   ) : searchResults.length > 0 ? (
                     searchResults.map((stock, index) => (
                       <button
                         key={index}
                         type="button"
-                        className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-600 border-b border-slate-100 dark:border-slate-600 last:border-b-0"
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                         onClick={() => handleStockSelect(stock)}
                       >
-                        <div className="font-medium text-slate-800 dark:text-slate-200">{stock.symbol}</div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400">{stock.company_name}</div>
+                        <div className="font-medium text-gray-800">{stock.symbol}</div>
+                        <div className="text-sm text-gray-500">{stock.company_name}</div>
                         {stock.current_price && (
-                          <div className="text-xs text-blue-600 dark:text-blue-400">Current Price: ₹{stock.current_price}</div>
+                          <div className="text-xs text-blue-600">Current Price: ₹{stock.current_price}</div>
                         )}
                       </button>
                     ))
                   ) : searchTerm.length >= 2 ? (
-                    <div className="px-4 py-3 text-slate-500 dark:text-slate-400">No stocks found</div>
+                    <div className="px-4 py-3 text-gray-500">No stocks found</div>
                   ) : null}
                 </div>
               )}
             </div>
             {prefilledData?.symbol && (
-              <p className="text-xs text-blue-600 dark:text-blue-400">
+              <p className="text-xs text-blue-600 mt-1">
                 Stock automatically selected from your analysis record
               </p>
             )}
@@ -338,8 +289,9 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
 
           {/* Date and Price Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Date */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="block text-sm font-medium text-gray-700">
                 Date <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -347,21 +299,21 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg 
-                    bg-white dark:bg-slate-700 text-slate-900 dark:text-white
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                    ${prefilledData?.date ? 'bg-slate-50 dark:bg-slate-600' : ''}`}
+                  className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                    prefilledData?.date ? 'bg-gray-50' : ''
+                  }`}
                   required
                 />
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               </div>
               {prefilledData?.date && (
-                <p className="text-xs text-blue-600 dark:text-blue-400">Date from analysis record</p>
+                <p className="text-xs text-blue-600">Date from analysis record</p>
               )}
             </div>
 
+            {/* Logged Price */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="block text-sm font-medium text-gray-700">
                 Logged Price (₹) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -371,24 +323,23 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
                   min="0"
                   value={loggedPrice}
                   onChange={(e) => setLoggedPrice(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg 
-                    bg-white dark:bg-slate-700 text-slate-900 dark:text-white
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                    ${prefilledData?.logged_price ? 'bg-slate-50 dark:bg-slate-600' : ''}`}
+                  className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-600 ${
+                    prefilledData?.logged_price ? 'bg-gray-50' : ''
+                  }`}
                   placeholder="Enter price"
                   required
                 />
-                <DollarSignIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <DollarSignIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               </div>
               {prefilledData?.logged_price && (
-                <p className="text-xs text-blue-600 dark:text-blue-400">Price from analysis record</p>
+                <p className="text-xs text-blue-600">Price from analysis record</p>
               )}
             </div>
           </div>
 
           {/* Category */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label className="block text-sm font-medium text-gray-700">
               Category <span className="text-red-500">*</span>
             </label>
             
@@ -397,9 +348,7 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg 
-                    bg-white dark:bg-slate-700 text-slate-900 dark:text-white
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900"
                   required={!showCustomCategory}
                 >
                   <option value="">Select a category</option>
@@ -409,15 +358,14 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
                     </option>
                   ))}
                 </select>
-                <ActionButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowCustomCategory(true)}
-                  leftIcon={<PlusIcon className="h-4 w-4" />}
+                <button
                   type="button"
+                  onClick={() => setShowCustomCategory(true)}
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
                 >
+                  <PlusIcon className="h-4 w-4" />
                   Add custom category
-                </ActionButton>
+                </button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -425,38 +373,33 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
                   type="text"
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg 
-                    bg-white dark:bg-slate-700 text-slate-900 dark:text-white
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-600"
                   placeholder="Enter custom category"
                   required={showCustomCategory}
                 />
-                <ActionButton
-                  variant="ghost"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={() => {
                     setShowCustomCategory(false);
                     setCustomCategory('');
                   }}
-                  type="button"
+                  className="text-gray-600 hover:text-gray-700 text-sm font-medium"
                 >
                   Use predefined categories
-                </ActionButton>
+                </button>
               </div>
             )}
           </div>
 
           {/* Notes */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label className="block text-sm font-medium text-gray-700">
               Notes (Optional)
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg 
-                bg-white dark:bg-slate-700 text-slate-900 dark:text-white
-                focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-600"
               rows={4}
               placeholder="Add any notes about this investment opportunity..."
             />
@@ -464,27 +407,26 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
 
           {/* Summary Box for Prefilled Data */}
           {prefilledData && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Analysis Record Summary</h4>
-              <div className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-blue-800 mb-2">Analysis Record Summary</h4>
+              <div className="text-sm text-blue-700">
                 <p><strong>Symbol:</strong> {prefilledData.symbol}</p>
                 <p><strong>Company:</strong> {prefilledData.company_name}</p>
-                <p><strong>Analysis Date:</strong> {prefilledData.date && formatDate(prefilledData.date)}</p>
+                <p><strong>Analysis Date:</strong> {prefilledData.date && new Date(prefilledData.date).toLocaleDateString()}</p>
                 <p><strong>Price:</strong> ₹{prefilledData.logged_price}</p>
               </div>
-              <Badge variant="info" size="sm" className="mt-2">
-                You only need to select a category to add this to your investment bucket.
-              </Badge>
+                     <p className="text-xs text-blue-600 mt-2">
+                       You only need to select a category to add this to your investment basket.
+                     </p>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+          {/* Buttons */}
+          <div className="flex justify-end gap-4 pt-4">
             <ActionButton
-              variant="ghost"
+              variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
-              type="button"
             >
               Cancel
             </ActionButton>
@@ -493,7 +435,7 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
               type="submit"
               disabled={isSubmitting || !selectedStock || !selectedDate || (!selectedCategory && !customCategory.trim()) || !loggedPrice}
             >
-              {isSubmitting ? 'Adding...' : 'Add to Bucket'}
+                     {isSubmitting ? 'Adding...' : 'Add to Basket'}
             </ActionButton>
           </div>
         </form>
@@ -502,18 +444,4 @@ const AddToBucketModal: React.FC<AddToBucketModalProps> = ({
   );
 };
 
-// Helper function to format date
-const formatDate = (dateString: string) => {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch (e) {
-    return dateString;
-  }
-};
-
-export default AddToBucketModal;
+export default AddToBasketModal;

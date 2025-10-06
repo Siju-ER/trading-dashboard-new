@@ -26,6 +26,9 @@ interface DataTableProps<T> {
   sortConfig?: SortConfig;
   onSort?: (field: string) => void;
   onRowClick?: (item: T) => void;
+  onRowSelectionChange?: (item: T, isSelected: boolean) => void;
+  selectedRows?: Set<string | number>;
+  rowKey?: (item: T) => string | number;
   emptyMessage?: string;
   className?: string;
   mobileCardRender?: (item: T) => ReactNode;
@@ -41,6 +44,9 @@ function DataTable<T extends Record<string, any>>({
   sortConfig,
   onSort,
   onRowClick,
+  onRowSelectionChange,
+  selectedRows,
+  rowKey = (item: T) => item._id || item.id || item.symbol || JSON.stringify(item),
   emptyMessage = "No records found",
   className = "",
   mobileCardRender,
@@ -87,11 +93,11 @@ function DataTable<T extends Record<string, any>>({
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden ${densityClass(density)} ${className}`}>
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden ${densityClass(density)} ${className}`}>
       {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className={`bg-slate-50 ${stickyHeader ? 'sticky top-0 z-10' : ''}`}>
+        <table className="min-w-full divide-y divide-purple-200">
+          <thead className={`bg-gray-50 ${stickyHeader ? 'sticky top-0 z-10' : ''}`}>
             <tr>
               {columns.map((column) => (
                 <th
@@ -109,7 +115,7 @@ function DataTable<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className={`bg-white divide-y divide-slate-200 ${striped ? '[&>tr:nth-child(even)]:bg-slate-50' : ''}`}>
+          <tbody className={`bg-gray-50 divide-y divide-purple-200 ${striped ? '[&>tr:nth-child(even)]:bg-gray-50' : ''}`}>
             {isLoading ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-4">
@@ -128,24 +134,53 @@ function DataTable<T extends Record<string, any>>({
                 </td>
               </tr>
             ) : (
-              data.map((item, index) => (
-                <tr 
-                  key={index} 
-                  className={`hover:bg-slate-100 transition duration-150 ${
-                    onRowClick ? 'cursor-pointer' : ''
-                  }`}
-                  onClick={() => onRowClick?.(item)}
-                >
-                  {columns.map((column) => (
-                    <td 
-                      key={String(column.field)} 
-                      className={`${cellPaddingClass(density)} whitespace-nowrap ${column.className || ''}`}
-                    >
-                      {renderCellContent(column, item)}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              data.map((item, index) => {
+                const key = rowKey(item);
+                const isSelected = selectedRows?.has(key) || false;
+                
+                return (
+                  <tr 
+                    key={index} 
+                    className={`transition duration-150 ${
+                      isSelected 
+                        ? 'bg-violet-50 border-l-4 border-violet-500' 
+                        : onRowClick ? 'hover:bg-gray-100 cursor-pointer' : 'hover:bg-gray-100'
+                    } ${onRowClick ? 'cursor-pointer' : ''}`}
+                    onClick={(e) => {
+                      if (onRowSelectionChange) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onRowSelectionChange(item, !isSelected);
+                      } else if (onRowClick) {
+                        onRowClick(item);
+                      }
+                    }}
+                  >
+                    {columns.map((column) => (
+                      <td 
+                        key={String(column.field)} 
+                        className={`${cellPaddingClass(density)} whitespace-nowrap ${column.className || ''} ${
+                          isSelected ? 'relative' : ''
+                        }`}
+                        onClick={(e) => {
+                          if (onRowSelectionChange) {
+                            e.stopPropagation();
+                          }
+                        }}
+                      >
+                        {renderCellContent(column, item)}
+                        {isSelected && column === columns[0] && (
+                          <span className="absolute -right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-violet-600 text-[10px] font-medium">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

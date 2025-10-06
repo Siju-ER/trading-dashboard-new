@@ -6,6 +6,7 @@ import { useApiData } from '@/lib/hooks/useApiData';
 import { API_BASE_URL } from '@/config';
 import SearchInput from '@/components/shared/filters/SearchInput';
 import FilterSection from '@/components/shared/filters/FilterSection';
+import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
 import DataTable, { Column } from '@/components/shared/table/DataTable';
 import Pagination from '@/components/shared/pagination/Pagination';
 import Modal from '@/components/shared/ui/modal/Modal';
@@ -53,6 +54,7 @@ export interface AnalysisRecord {
 const AnalysisTracker: React.FC = () => {
     const router = useRouter();
     const [showFilters, setShowFilters] = useState(false);
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [selectedRecord, setSelectedRecord] = useState<AnalysisRecord | null>(null);
     const [modalContent, setModalContent] = useState<'summary' | 'conclusion'>('summary');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,7 +145,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
     const filterFields = [
         {
             name: 'logged_date',
-            label: 'Logged Date',
+            label: 'Date',
             type: 'select' as const,
             placeholder: 'Select Date',
             options: generateDateOptions().map(date => ({
@@ -157,9 +159,9 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
         },
         {
             name: 'type',
-            label: 'Analysis Type',
+            label: 'Type',
             type: 'select' as const,
-            placeholder: 'All Types',
+            placeholder: 'Select Type',
             options: [
                 { value: 'PRICE_SPIKE', label: 'Price Spike' },
                 { value: 'VOLUME_SPIKE', label: 'Volume Spike' },
@@ -167,9 +169,9 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
         },
         {
             name: 'stockStatus',
-            label: 'Stock Status',
+            label: 'Status',
             type: 'select' as const,
-            placeholder: 'All Status',
+            placeholder: 'Select Status',
             options: [
                 { value: 'new_stock', label: 'New' },
                 { value: 'trending_stock', label: 'Trending' },
@@ -195,34 +197,34 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
     const followConfig = {
         new_stock: {
             label: 'New',
-            color: '#10B981',
-            bgColor: 'bg-green-100 dark:bg-green-900/20',
-            textColor: 'text-green-800 dark:text-green-200',
-            borderColor: 'border-green-500',
+            color: '#8B5CF6',
+            bgColor: 'bg-purple-100',
+            textColor: 'text-purple-800',
+            borderColor: 'border-purple-500',
             icon: StarIcon
         },
         trending_stock: {
-            label: 'Trending',
-            color: '#F59E0B',
-            bgColor: 'bg-amber-100 dark:bg-amber-900/20',
-            textColor: 'text-amber-800 dark:text-amber-200',
-            borderColor: 'border-amber-500',
+            label: 'Hot',
+            color: '#EF4444',
+            bgColor: 'bg-red-100',
+            textColor: 'text-red-800',
+            borderColor: 'border-red-500',
             icon: ZapIcon
         },
         follow: {
-            label: 'Follow',
-            color: '#3B82F6',
-            bgColor: 'bg-blue-100 dark:bg-blue-900/20',
-            textColor: 'text-blue-800 dark:text-blue-200',
-            borderColor: 'border-blue-500',
+            label: 'Hold',
+            color: '#10B981',
+            bgColor: 'bg-green-100',
+            textColor: 'text-green-800',
+            borderColor: 'border-green-500',
             icon: HeartIcon
         },
         strategy: {
-            label: 'Strategy',
-            color: '#8B5CF6',
-            bgColor: 'bg-purple-100 dark:bg-purple-900/20',
-            textColor: 'text-purple-800 dark:text-purple-200',
-            borderColor: 'border-purple-500',
+            label: 'Funda',
+            color: '#3B82F6',
+            bgColor: 'bg-blue-100',
+            textColor: 'text-blue-800',
+            borderColor: 'border-blue-500',
             icon: ActivityIcon
         }
     };
@@ -262,6 +264,12 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             'CHOPPY'
         ],
         funda: ['GOOD', 'NEUTRAL', 'BAD'],
+        stockStatus: [
+            'new_stock',
+            'trending_stock',
+            'follow',
+            'strategy'
+        ]
     };
 
     // Calculate percentage change
@@ -490,9 +498,14 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
     };
 
     const handleClearFilters = () => {
+        // Clear all filters
+        updateFilter('logged_date', '');
         updateFilter('type', '');
         updateFilter('stockStatus', '');
         updateFilter('limit', '100');
+        
+        // Clear search term
+        setSearchTerm('');
     };
 
     // Generate TradingView URL
@@ -514,7 +527,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             render: (value, record) => (
                 <button
                     onClick={() => router.push(`/dashboard/analysis?symbol=${record.symbol}`)}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+                    className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                 >
                     {value}
                 </button>
@@ -537,17 +550,18 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             label: 'Date',
             sortable: true,
             render: (value) => formatDate(value),
-            className: 'text-sm text-slate-600 dark:text-slate-300',
+            className: 'text-sm text-slate-600',
         },
         {
             field: 'logged_price',
             label: 'Logged Price',
             sortable: true,
             render: (value) => (
-                <span className="font-medium text-slate-900 dark:text-white">
+                <span className="font-medium text-slate-900">
                     ₹{value?.toFixed(2)}
                 </span>
             ),
+            className: 'text-right',
         },
         {
             field: 'current_price',
@@ -556,20 +570,22 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             render: (value, record) => {
                 const change = calculatePercentageChange(value, record.logged_price);
                 return (
-                    <div className="flex flex-col">
-                        <span className={`font-medium ${change.isPositive === true
-                                ? 'text-green-600 dark:text-green-400'
-                                : change.isPositive === false
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-slate-900 dark:text-white'
-                            }`}>
+                    <div className="flex flex-col items-end text-right">
+                        <span className={`font-medium ${
+                            change.isPositive === true 
+                                ? 'text-green-600' 
+                                : change.isPositive === false 
+                                    ? 'text-red-600' 
+                                    : 'text-slate-900'
+                        }`}>
                             ₹{value?.toFixed(2)}
                         </span>
                         {change.isPositive !== null && (
-                            <span className={`text-xs flex items-center ${change.isPositive
-                                    ? 'text-green-600 dark:text-green-400'
-                                    : 'text-red-600 dark:text-red-400'
-                                }`}>
+                            <span className={`text-xs flex items-center justify-end ${
+                                change.isPositive 
+                                    ? 'text-green-600' 
+                                    : 'text-red-600'
+                            }`}>
                                 {change.isPositive ? (
                                     <ArrowUpIcon className="h-3 w-3 mr-1" />
                                 ) : (
@@ -581,6 +597,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     </div>
                 );
             },
+            className: 'text-right',
         },
         {
             field: 'gain',
@@ -588,10 +605,10 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             sortable: true,
             render: (value) => (
                 <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${value > 0
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
+                        ? 'bg-green-100 text-green-800'
                         : value < 0
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
                     }`}>
                     {value > 0 ? (
                         <TrendingUpIcon className="h-3 w-3" />
@@ -608,10 +625,10 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             sortable: true,
             render: (value) => (
                 <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${value > 0
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
+                        ? 'bg-green-100 text-green-800'
                         : value < 0
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
                     }`}>
                     {value > 0 ? (
                         <TrendingUpIcon className="h-3 w-3" />
@@ -620,39 +637,6 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     ) : null}
                     {value ? value.toFixed(2) : '0.00'}%
                 </span>
-            ),
-        },
-        {
-            field: 'rsi',
-            label: 'RSI',
-            render: (value) => (
-                <Badge variant={getTrendVariant(value)} size="sm">
-                    {value || 'N/A'}
-                </Badge>
-            ),
-        },
-        {
-            field: 'macd',
-            label: 'MACD',
-            render: (value) => (
-                <Badge variant={getTrendVariant(value)} size="sm">
-                    {value || 'N/A'}
-                </Badge>
-            ),
-        },
-        {
-            field: 'previous_trend',
-            label: 'Trend',
-            render: (value) => (
-                <Badge
-                    variant={
-                        value?.includes('UPTREND') ? 'success' :
-                            value?.includes('DOWNTREND') ? 'danger' : 'warning'
-                    }
-                    size="sm"
-                >
-                    {value || 'N/A'}
-                </Badge>
             ),
         },
         {
@@ -731,64 +715,70 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             field: 'actions',
             label: 'Actions',
             render: (_, record) => (
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-2">
                     <ActionButton
-                        variant="ghost"
-                        size="sm"
                         onClick={() => handleAddToBucket(record)}
-                        title="Add to Investment Bucket"
+                        leftIcon={<ShoppingBasketIcon className="h-4 w-4" />}
+                        variant="ghost"
+                        size="sm"
+                        className="!text-purple-500 hover:!bg-purple-50 hover:!text-purple-600 !border !border-purple-200"
                     >
-                        <ShoppingBasketIcon className="h-4 w-4 text-orange-500" />
+                        Basket
                     </ActionButton>
 
                     <ActionButton
-                        variant="ghost"
-                        size="sm"
                         onClick={() => handleViewDetails(record, 'summary')}
-                        title="View Summary"
+                        leftIcon={<FileTextIcon className="h-4 w-4" />}
+                        variant="ghost"
+                        size="sm"
+                        className="!text-purple-500 hover:!bg-purple-50 hover:!text-purple-600"
                     >
-                        <FileTextIcon className="h-4 w-4 text-purple-500" />
+                        Summary
                     </ActionButton>
 
                     <ActionButton
-                        variant="ghost"
-                        size="sm"
                         onClick={() => handleEditRecord(record)}
-                        title="Edit Record"
+                        leftIcon={<EditIcon className="h-4 w-4" />}
+                        variant="ghost"
+                        size="sm"
+                        className="!text-blue-500 hover:!bg-blue-50 hover:!text-blue-600"
                     >
-                        <EditIcon className="h-4 w-4 text-blue-500" />
+                        Edit
                     </ActionButton>
 
                     <ActionButton
-                        variant="ghost"
-                        size="sm"
                         onClick={() => {
                             setItemToDelete(record);
                             setIsDeleteModalOpen(true);
                         }}
-                        title="Delete Record"
+                        leftIcon={<TrashIcon className="h-4 w-4" />}
+                        variant="ghost"
+                        size="sm"
+                        className="!text-red-500 hover:!bg-red-50 hover:!text-red-600"
                     >
-                        <TrashIcon className="h-4 w-4 text-red-500" />
+                        Delete
                     </ActionButton>
 
                     <ActionButton
-                        variant="ghost"
-                        size="sm"
                         href={getTradingViewUrl(record.symbol)}
                         external
-                        title="View on TradingView"
+                        leftIcon={<TrendingUpIcon className="h-4 w-4" />}
+                        variant="ghost"
+                        size="sm"
+                        className="!text-blue-500 hover:!bg-blue-50 hover:!text-blue-600"
                     >
-                        <TrendingUpIcon className="h-4 w-4 text-blue-500" />
+                        Chart
                     </ActionButton>
 
                     <ActionButton
-                        variant="ghost"
-                        size="sm"
                         href={getScreenerUrl(record.symbol)}
                         external
-                        title="View on Screener.in"
+                        leftIcon={<BarChart3Icon className="h-4 w-4" />}
+                        variant="ghost"
+                        size="sm"
+                        className="!text-green-500 hover:!bg-green-50 hover:!text-green-600"
                     >
-                        <BarChart3Icon className="h-4 w-4 text-green-500" />
+                        Screener
                     </ActionButton>
                 </div>
             ),
@@ -805,7 +795,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     <div className="flex items-center space-x-2">
                         <button
                             onClick={() => router.push(`/dashboard/analysis?symbol=${record.symbol}`)}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+                            className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                         >
                             {record.symbol}
                         </button>
@@ -818,72 +808,45 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     </div>
 
                     <span className={`text-sm font-medium ${change.isPositive === true
-                            ? 'text-green-600 dark:text-green-400'
+                            ? 'text-green-600'
                             : change.isPositive === false
-                                ? 'text-red-600 dark:text-red-400'
-                                : 'text-slate-900 dark:text-white'
+                                ? 'text-red-600'
+                                : 'text-slate-900'
                         }`}>
                         ₹{record.current_price?.toFixed(2)}
                     </span>
                 </div>
 
-
-
-
-                <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center space-x-2">
-                        <button
-                            onClick={() => router.push(`/dashboard/analysis?symbol=${record.symbol}`)}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
-                        >
-                            {record.symbol}
-                        </button>
-                        <Badge
-                            variant={record.type === 'PRICE_SPIKE' ? 'danger' : record.type === 'VOLUME_SPIKE' ? 'info' : 'neutral'}
-                            size="sm"
-                        >
-                            {record.type ? record.type.replace('_', ' ') : 'N/A'}
-                        </Badge>
-                    </div>
-
-                    <span className={`text-sm font-medium ${change.isPositive === true
-                            ? 'text-green-600 dark:text-green-400'
-                            : change.isPositive === false
-                                ? 'text-red-600 dark:text-red-400'
-                                : 'text-slate-900 dark:text-white'
-                        }`}>
-                        ₹{record.current_price?.toFixed(2)}
-                    </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 dark:text-slate-400 mb-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 mb-3">
                     <div>
-                        <span className="font-medium">Logged:</span> ₹{record.logged_price.toFixed(2)}
+                        <span className="font-semibold text-slate-700">Logged:</span> 
+                        <span className="ml-1 text-slate-900">₹{record.logged_price.toFixed(2)}</span>
                     </div>
                     <div>
-                        <span className="font-medium">Change:</span>
+                        <span className="font-semibold text-slate-700">Change:</span>
                         {change.isPositive !== null && (
-                            <span className={`ml-1 ${change.isPositive
-                                    ? 'text-green-600 dark:text-green-400'
-                                    : 'text-red-600 dark:text-red-400'
+                            <span className={`ml-1 font-medium ${change.isPositive
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
                                 }`}>
                                 {change.isPositive ? '+' : ''}{change.value}%
                             </span>
                         )}
                     </div>
                     <div>
-                        <span className="font-medium">Gain:</span>
+                        <span className="font-semibold text-slate-700">Gain:</span>
                         <span className={`ml-1 ${record.gain > 0
-                                ? 'text-green-600 dark:text-green-400'
+                                ? 'text-green-600'
                                 : record.gain < 0
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-slate-600 dark:text-slate-400'
+                                    ? 'text-red-600'
+                                    : 'text-slate-600'
                             }`}>
                             {record.gain.toFixed(2)}%
                         </span>
                     </div>
                     <div>
-                        <span className="font-medium">Date:</span> {formatDate(record.logged_date)}
+                        <span className="font-semibold text-slate-700">Date:</span> 
+                        <span className="ml-1 text-slate-900">{formatDate(record.logged_date)}</span>
                     </div>
                 </div>
 
@@ -913,9 +876,10 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                         variant="outline"
                         size="xs"
                         onClick={() => handleAddToBucket(record)}
+                        className="!bg-purple-50 !text-purple-700 !border-purple-200 hover:!bg-purple-100 !border-2"
+                        leftIcon={<ShoppingBasketIcon className="h-3 w-3" />}
                     >
-                        <ShoppingBasketIcon className="h-3 w-3 mr-1" />
-                        Bucket
+                        Basket
                     </ActionButton>
 
                     <ActionButton
@@ -944,180 +908,43 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        Stock Analysis Tracker
-                    </h1>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Track and manage stock analysis records with comprehensive data
-                    </p>
-                </div>
+          
 
-                <div className="flex items-center space-x-2">
-                    <ActionButton
-                        variant="primary"
-                        onClick={() => setIsAddModalOpen(true)}
-                        leftIcon={<PlusIcon />}
-                    >
-                        Add Record
-                    </ActionButton>
-
-                    <ActionButton
-                        variant="outline"
-                        onClick={() => refetch()}
-                        leftIcon={<RefreshCwIcon className={isLoading ? 'animate-spin' : ''} />}
-                        disabled={isLoading}
-                    >
-                        Refresh
-                    </ActionButton>
-                </div>
-            </div>
-
-            {/* Search and Filters */}
-            <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <SearchInput
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                        placeholder="Search symbols..."
-                        className="flex-1"
-                    />
-                </div>
-
-                <FilterPanel
-                    title="Advanced Filters"
-                    isOpen={showFilters}
-                    onToggle={() => setShowFilters(!showFilters)}
-                    onClear={handleClearFilters}
-                    variant="bordered"
-                    collapsible
-                >
-                    <FilterSection
-                        isVisible={true}
-                        onToggle={() => { }}
-                        fields={filterFields}
-                        values={filters}
-                        onChange={updateFilter}
-                        onClear={handleClearFilters}
-                    />
-                </FilterPanel>
-            </div>
-
-            {/* Summary Stats */}
-            {!isLoading && analysisRecords.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                <BarChart3Icon className="h-6 w-6 text-blue-600 dark:text-blue-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Records</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">{analysisRecords.length}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                                <TrendingUpIcon className="h-6 w-6 text-green-600 dark:text-green-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Positive Gains</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    {analysisRecords.filter(r => r.gain > 0).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                                <TrendingDownIcon className="h-6 w-6 text-red-600 dark:text-red-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Negative Gains</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    {analysisRecords.filter(r => r.gain < 0).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                                <StarIcon className="h-6 w-6 text-green-600 dark:text-green-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">New Stocks</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    {analysisRecords.filter(r => r.new_stock === true).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
-                                <ZapIcon className="h-6 w-6 text-amber-600 dark:text-amber-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Trending</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    {analysisRecords.filter(r => r.trending_stock === true).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                <HeartIcon className="h-6 w-6 text-blue-600 dark:text-blue-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Following</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    {analysisRecords.filter(r => r.follow === true).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                                <ActivityIcon className="h-6 w-6 text-purple-600 dark:text-purple-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Strategy</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    {analysisRecords.filter(r => r.strategy === true).length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center">
-                            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                                <TrendingUpIcon className="h-6 w-6 text-red-600 dark:text-red-300" />
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Price Spikes</p>
-                                <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                                    {analysisRecords.filter(r => r.type === 'PRICE_SPIKE').length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Compact Search and Filters */}
+            <CompactFilterBar
+                fields={filterFields}
+                values={filters}
+                onChange={updateFilter}
+                onClear={handleClearFilters}
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Search symbols..."
+                showSearch={true}
+                showQuickFilters={true}
+                quickFilterPresets={[
+                    {
+                        label: 'New',
+                        values: { new_stock: 'true' },
+                        icon: <StarIcon className="w-3 h-3" />
+                    },
+                    {
+                        label: 'Trending',
+                        values: { trending_stock: 'true' },
+                        icon: <ZapIcon className="w-3 h-3" />
+                    },
+                    {
+                        label: 'Follow',
+                        values: { follow: 'true' },
+                        icon: <HeartIcon className="w-3 h-3" />
+                    },
+                    {
+                        label: 'Strategy',
+                        values: { strategy: 'true' },
+                        icon: <ActivityIcon className="w-3 h-3" />
+                    }
+                ]}
+                className="mb-6"
+            />
 
             {/* Data Table */}
             <DataTable
@@ -1129,8 +956,25 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     key: field,
                     direction: sortConfig.key === field && sortConfig.direction === 'asc' ? 'desc' : 'asc',
                 })}
+                onRowSelectionChange={(item, isSelected) => {
+                    setSelectedRows(prev => {
+                        const newSet = new Set(prev);
+                        const key = item.id;
+                        if (isSelected) {
+                            newSet.add(key);
+                        } else {
+                            newSet.delete(key);
+                        }
+                        return newSet;
+                    });
+                }}
+                selectedRows={selectedRows}
+                rowKey={(item) => item.id}
                 mobileCardRender={renderMobileCard}
                 emptyMessage="No analysis records found"
+                striped
+                stickyHeader
+                density="compact"
             />
 
             {/* Pagination */}
@@ -1187,12 +1031,14 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     onClose={() => setIsModalOpen(false)}
                     maxWidth="lg"
                 >
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
-                        <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
-                            {modalContent === 'summary' ? 'Analysis Summary' : 'Conclusion'} - {selectedRecord.symbol}
-                        </h3>
-                        <div className="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg mb-4">
-                            <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                    <div className="p-6">
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl mb-6 border border-purple-100">
+                            <h3 className="text-xl font-bold text-slate-900">
+                                {modalContent === 'summary' ? 'Analysis Summary' : 'Conclusion'} - {selectedRecord.symbol}
+                            </h3>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg mb-4 border border-gray-100 shadow-sm">
+                            <p className="text-slate-900 whitespace-pre-wrap">
                                 {modalContent === 'summary' ? selectedRecord.summary : selectedRecord.conclusion}
                             </p>
                         </div>
@@ -1218,27 +1064,27 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Add New Analysis Record</h3>
                     <form onSubmit={handleAddRecord} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Symbol
                             </label>
                             <input
                                 type="text"
                                 value={addForm.symbol}
                                 onChange={(e) => setAddForm(prev => ({ ...prev, symbol: e.target.value }))}
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 placeholder="Enter stock symbol"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Date
                             </label>
                             <input
                                 type="date"
                                 value={addForm.date}
                                 onChange={(e) => setAddForm(prev => ({ ...prev, date: e.target.value }))}
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 required
                             />
                         </div>
@@ -1267,40 +1113,42 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                 onClose={() => setIsEditModalOpen(false)}
                 maxWidth="xl"
             >
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg max-h-[90vh] overflow-y-auto">
-                    <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
-                        Edit Analysis Record - {editForm.symbol}
-                    </h3>
+                <div className="p-6 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl mb-6 border border-purple-100">
+                        <h3 className="text-xl font-bold text-slate-900">
+                            Edit Analysis Record - {editForm.symbol}
+                        </h3>
+                    </div>
                     <form onSubmit={handleUpdateRecord} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Symbol
                                 </label>
                                 <input
                                     type="text"
                                     value={editForm.symbol}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, symbol: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Logged Date
                                 </label>
                                 <input
                                     type="date"
                                     value={editForm.logged_date}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, logged_date: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Logged Price
                                 </label>
                                 <input
@@ -1308,13 +1156,13 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                     step="0.01"
                                     value={editForm.logged_price}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, logged_price: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Current Price
                                 </label>
                                 <input
@@ -1322,19 +1170,19 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                     step="0.01"
                                     value={editForm.current_price}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, current_price: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     RSI
                                 </label>
                                 <select
                                     value={editForm.rsi}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, rsi: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 >
                                     <option value="">Select RSI</option>
                                     {dropdownOptions.rsi.map(option => (
@@ -1344,13 +1192,13 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     MACD
                                 </label>
                                 <select
                                     value={editForm.macd}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, macd: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 >
                                     <option value="">Select MACD</option>
                                     {dropdownOptions.macd.map(option => (
@@ -1360,13 +1208,13 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Price Spike
                                 </label>
                                 <select
                                     value={editForm.price_spike}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, price_spike: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 >
                                     <option value="">Select Price Spike</option>
                                     {dropdownOptions.price_spike.map(option => (
@@ -1376,13 +1224,13 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Volume Spike
                                 </label>
                                 <select
                                     value={editForm.volume_spike}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, volume_spike: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 >
                                     <option value="">Select Volume Spike</option>
                                     {dropdownOptions.volume_spike.map(option => (
@@ -1392,13 +1240,13 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Previous Trend
                                 </label>
                                 <select
                                     value={editForm.previous_trend}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, previous_trend: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 >
                                     <option value="">Select Previous Trend</option>
                                     {dropdownOptions.previous_trend.map(option => (
@@ -1408,13 +1256,13 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Fundamental Analysis
                                 </label>
                                 <select
                                     value={editForm.funda}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, funda: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 >
                                     <option value="">Select Funda</option>
                                     {dropdownOptions.funda.map(option => (
@@ -1433,7 +1281,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                     onChange={(e) => setEditForm(prev => ({ ...prev, gap_up: e.target.checked }))}
                                     className="mr-2"
                                 />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">Gap Up</span>
+                                <span className="text-sm text-slate-700">Gap Up</span>
                             </label>
 
                             <label className="flex items-center">
@@ -1443,7 +1291,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                     onChange={(e) => setEditForm(prev => ({ ...prev, new_stock: e.target.checked }))}
                                     className="mr-2"
                                 />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">New Stock</span>
+                                <span className="text-sm text-slate-700">New</span>
                             </label>
 
                             <label className="flex items-center">
@@ -1453,7 +1301,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                     onChange={(e) => setEditForm(prev => ({ ...prev, trending_stock: e.target.checked }))}
                                     className="mr-2"
                                 />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">Trending Stock</span>
+                                <span className="text-sm text-slate-700">Hot</span>
                             </label>
 
                             <label className="flex items-center">
@@ -1463,7 +1311,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                     onChange={(e) => setEditForm(prev => ({ ...prev, follow: e.target.checked }))}
                                     className="mr-2"
                                 />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">Follow</span>
+                                <span className="text-sm text-slate-700">Hold</span>
                             </label>
 
                             <label className="flex items-center">
@@ -1473,33 +1321,33 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                     onChange={(e) => setEditForm(prev => ({ ...prev, strategy: e.target.checked }))}
                                     className="mr-2"
                                 />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">Strategy</span>
+                                <span className="text-sm text-slate-700">Funda</span>
                             </label>
                         </div>
 
                         {/* Text areas */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Summary
                             </label>
                             <textarea
                                 value={editForm.summary}
                                 onChange={(e) => setEditForm(prev => ({ ...prev, summary: e.target.value }))}
                                 rows={3}
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 placeholder="Enter analysis summary..."
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Conclusion
                             </label>
                             <textarea
                                 value={editForm.conclusion}
                                 onChange={(e) => setEditForm(prev => ({ ...prev, conclusion: e.target.value }))}
                                 rows={3}
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900"
                                 placeholder="Enter conclusion..."
                             />
                         </div>
@@ -1530,12 +1378,14 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                     onClose={() => setIsDeleteModalOpen(false)}
                     maxWidth="md"
                 >
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
-                        <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
-                            Delete Analysis Record
-                        </h3>
-                        <p className="mb-6 text-slate-600 dark:text-slate-300">
-                            Are you sure you want to delete the analysis record for <span className="font-medium">{itemToDelete.symbol}</span>? This action cannot be undone.
+                    <div className="p-6">
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl mb-6 border border-purple-100">
+                            <h3 className="text-xl font-bold text-slate-900">
+                                Delete Analysis Record
+                            </h3>
+                        </div>
+                        <p className="mb-6 text-slate-900">
+                            Are you sure you want to delete the analysis record for <span className="font-medium text-slate-900">{itemToDelete.symbol}</span>? This action cannot be undone.
                         </p>
                         <div className="flex justify-end space-x-3">
                             <ActionButton

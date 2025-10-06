@@ -1,44 +1,28 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApiData } from '@/lib/hooks/useApiData';
 import { API_BASE_URL } from '@/config';
 import SearchInput from '@/components/shared/filters/SearchInput';
 import FilterSection from '@/components/shared/filters/FilterSection';
+import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
 import DataTable, { Column } from '@/components/shared/table/DataTable';
 import Pagination from '@/components/shared/pagination/Pagination';
 import Modal from '@/components/shared/ui/modal/Modal';
+import SymbolDetailsModal from '@/components/shared/ui/modal/SymbolDetailsModal';
 import ActionButton from '@/components/shared/ui/button/ActionButton';
 import Badge from '@/components/shared/ui/badge/Badge';
 import FilterPanel from '@/components/shared/filters/FilterPanel';
 import WatchlistDetailsModal from './WatchlistDetailsModal';
 import WatchlistDialog from './WatchlistDialog';
+import AddToBucketModal from '@/components/features/my-bucket/AddToBucketModal';
 import { 
   TrendingUpIcon, BarChart3Icon, EyeIcon, StarIcon, EditIcon, TrashIcon,
-  PlusIcon, ArrowUpIcon, ArrowDownIcon, ExternalLinkIcon 
+  PlusIcon, ArrowUpIcon, ArrowDownIcon, ExternalLinkIcon, HoldIcon, FundaIcon,
+  FileTextIcon, ShoppingBasketIcon
 } from '@/components/shared/icons';
-
-export interface WatchlistItem {
-  _id: string | { $oid: string };
-  date: { $date: string };
-  symbol: string;
-  close: number;
-  current_price: number;
-  high: number;
-  low: number;
-  open: number;
-  volume: number;
-  current_volume?: number;
-  trend: string;
-  news: string;
-  notes: string;
-  investment_case: string;
-  following_price?: number;
-  add_to_wishlist?: boolean;
-  created_at?: string;
-  followStatus?: string;
-}
+import { WatchlistItem } from '@/types/watchlist';
 
 interface WatchlistContainerProps {
   isWishlist?: boolean;
@@ -48,11 +32,18 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedItem, setSelectedItem] = useState<WatchlistItem | null>(null);
-  const [modalContent, setModalContent] = useState<'news' | 'notes' | 'investment_case'>('news');
+  const [modalContent, setModalContent] = useState<'news' | 'notes' | 'investment_case' | 'business_summary'>('news');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<WatchlistItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<WatchlistItem | null>(null);
+  const [isAddToBasketModalOpen, setIsAddToBasketModalOpen] = useState(false);
+  const [itemToAddToBasket, setItemToAddToBasket] = useState<WatchlistItem | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
+  const [symbolForDetails, setSymbolForDetails] = useState<string | undefined>(undefined);
 
   // Use your existing useApiData hook
   const {
@@ -75,13 +66,41 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
     initialFilters: isWishlist ? { add_to_wishlist: 'true' } : {},
   });
 
+  // Local state for optimistic updates
+  const [localWatchlist, setLocalWatchlist] = useState<WatchlistItem[]>([]);
+  
+  // Update local state when watchlist data changes
+  useEffect(() => {
+    setLocalWatchlist(watchlist);
+  }, [watchlist]);
+
+  // Use local watchlist for display
+  const displayWatchlist = localWatchlist.length > 0 ? localWatchlist : watchlist;
+
+  // Debug: Log filters when they change
+  useEffect(() => {
+    console.log('Watchlist filters updated:', filters);
+  }, [filters]);
+
   // Enhanced filter field definitions with beautiful calendar components
   const filterFields = [
+    {
+      name: 'follow_status',
+      label: 'Status',
+      type: 'select' as const,
+      placeholder: 'Select Status',
+      options: [
+        { value: 'New', label: 'New' },
+        { value: 'Hot', label: 'Hot' },
+        { value: 'Hold', label: 'Hold' },
+        { value: 'Funda', label: 'Funda' },
+      ],
+    },
     {
       name: 'trend',
       label: 'Trend',
       type: 'select' as const,
-      placeholder: 'All Trends',
+      placeholder: 'Select Trend',
       options: [
         { value: 'Bullish', label: 'Bullish' },
         { value: 'Bearish', label: 'Bearish' },
@@ -90,41 +109,46 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       ],
     },
     {
-      name: 'follow_status',
-      label: 'Follow Status',
-      type: 'select' as const,
-      placeholder: 'All Status',
-      options: [
-        { value: 'Follow', label: 'Follow' },
-        { value: 'Watch', label: 'Watch' },
-        { value: 'Hold', label: 'Hold' },
-        { value: 'Unfollow', label: 'Unfollow' },
-      ],
-    },
-    {
-      name: 'date_range',
-      label: 'Date Range',
-      type: 'dateRange' as const,
-      placeholder: 'Select date range',
-      minDate: new Date(2020, 0, 1),
-      maxDate: new Date(),
-    },
-    {
       name: 'start_date',
       label: 'Start Date',
       type: 'date' as const,
-      placeholder: 'Select start date',
-      minDate: new Date(2020, 0, 1),
-      maxDate: new Date(),
+      placeholder: 'Select Start Date',
     },
     {
       name: 'end_date',
       label: 'End Date',
       type: 'date' as const,
-      placeholder: 'Select end date',
-      minDate: new Date(2020, 0, 1),
-      maxDate: new Date(),
+      placeholder: 'Select End Date',
     },
+  ];
+
+  // Quick filter presets for watchlist
+  const quickFilterPresets = [
+    {
+      label: 'New',
+      values: { follow_status: 'New' } as Record<string, string | number | boolean>,
+      icon: <PlusIcon className="w-3 h-3" />
+    },
+    {
+      label: 'Hot',
+      values: { follow_status: 'Hot' } as Record<string, string | number | boolean>,
+      icon: <TrendingUpIcon className="w-3 h-3" />
+    },
+    {
+      label: 'Hold',
+      values: { follow_status: 'Hold' } as Record<string, string | number | boolean>,
+      icon: <HoldIcon className="w-3 h-3" />
+    },
+    {
+      label: 'Funda',
+      values: { follow_status: 'Funda' } as Record<string, string | number | boolean>,
+      icon: <FundaIcon className="w-3 h-3" />
+    },
+    {
+      label: 'Wishlist',
+      values: { add_to_wishlist: 'true' } as Record<string, string | number | boolean>,
+      icon: <StarIcon className="w-3 h-3" />
+    }
   ];
 
   // Memoized calculation functions for better performance
@@ -152,15 +176,16 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
 
   const getFollowStatusVariant = (status: string | undefined): 'success' | 'warning' | 'info' | 'neutral' => {
     switch (status) {
-      case 'Follow': return 'success';
-      case 'Hold': return 'warning';
-      case 'Watch': return 'info';
+      case 'New': return 'info';
+      case 'Hot': return 'warning';
+      case 'Hold': return 'success';
+      case 'Funda': return 'neutral';
       default: return 'neutral';
     }
   };
 
   // Memoized action handlers for better performance
-  const handleViewDetails = useCallback((item: WatchlistItem, content: 'news' | 'notes' | 'investment_case') => {
+  const handleViewDetails = useCallback((item: WatchlistItem, content: 'news' | 'notes' | 'investment_case' | 'business_summary') => {
     setSelectedItem(item);
     setModalContent(content);
     setIsModalOpen(true);
@@ -189,6 +214,9 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
   }, [refetch]);
 
   const handleToggleWishlist = useCallback(async (item: WatchlistItem) => {
+    // Optimistic update - update UI immediately
+    const updatedItem = { ...item, add_to_wishlist: !item.add_to_wishlist };
+    
     try {
       const response = await fetch(`${API_BASE_URL}/watchlist/${item._id}`, {
         method: 'PUT',
@@ -200,15 +228,52 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
 
       const data = await response.json();
       if (data.status === 'success') {
-        await refetch();
+        // Update the local data state directly
+        setLocalWatchlist((prevData) => 
+          prevData?.map((watchlistItem) => 
+            watchlistItem._id === item._id ? updatedItem : watchlistItem
+          ) || []
+        );
       } else {
+        // Revert on error
         alert(data.message || 'Failed to update wishlist');
       }
     } catch (error) {
       console.error('Error updating wishlist:', error);
       alert('An error occurred while updating wishlist');
     }
-  }, [refetch]);
+  }, []);
+
+  const handleFollowStatusChange = useCallback(async (item: WatchlistItem, newStatus: string) => {
+    // Optimistic update - update UI immediately
+    const updatedItem = { ...item, followStatus: newStatus };
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/watchlist/${item._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          followStatus: newStatus 
+        }),
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        // Update the local data state directly
+        setLocalWatchlist((prevData) => 
+          prevData?.map((watchlistItem) => 
+            watchlistItem._id === item._id ? updatedItem : watchlistItem
+          ) || []
+        );
+      } else {
+        // Revert on error
+        alert(data.message || 'Failed to update follow status');
+      }
+    } catch (error) {
+      console.error('Error updating follow status:', error);
+      alert('An error occurred while updating follow status');
+    }
+  }, []);
 
   const handleClearFilters = () => {
     updateFilter('trend', '');
@@ -216,6 +281,54 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
     updateFilter('start_date', '');
     updateFilter('end_date', '');
   };
+
+  // Handle edit button click
+  const handleEdit = useCallback((item: WatchlistItem) => {
+    setItemToEdit({
+      ...item,
+      current_price: item.current_price || item.close,
+      current_volume: item.current_volume || item.volume,
+      following_price: item.following_price || item.current_price || item.close,
+      notes: item.notes || '',
+      followStatus: item.followStatus || 'New',
+    });
+    setIsEditModalOpen(true);
+  }, []);
+
+  // Handle edit submit
+  const handleEditSubmit = useCallback(async () => {
+    if (!itemToEdit) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/watchlist/${itemToEdit._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(itemToEdit),
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        setIsEditModalOpen(false);
+        setItemToEdit(null);
+        await refetch();
+      } else {
+        alert(data.message || 'Failed to update item');
+      }
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('An error occurred while updating the item');
+    }
+  }, [itemToEdit, refetch]);
+
+  // Handle add to basket
+  const handleAddToBasket = useCallback((item: WatchlistItem) => {
+    console.log('Add to basket clicked for:', item.symbol);
+    setItemToAddToBasket(item);
+    setIsAddToBasketModalOpen(true);
+  }, []);
 
   // Memoized table column definitions for better performance
   const columns: Column<WatchlistItem>[] = useMemo(() => [
@@ -226,19 +339,97 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       render: (value, item) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => router.push(`/dashboard/analysis?symbol=${item.symbol}`)}
-            className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSymbolForDetails(item.symbol);
+              setIsSymbolModalOpen(true);
+            }}
+            className="text-violet-600 hover:text-violet-800 hover:underline font-medium"
+            title="View equity details"
           >
             {value}
           </button>
-          {item.followStatus && (
-            <Badge 
-              variant={getFollowStatusVariant(item.followStatus)}
-              size="sm"
+          <div className="flex items-center space-x-2">
+            {/* Follow Status Options Group */}
+            <div className="flex items-center space-x-0.5 px-1.5 py-0.5 rounded-md border border-slate-200 bg-slate-50">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFollowStatusChange(item, 'New');
+                }}
+                className={`px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 ${
+                  item.followStatus === 'New' 
+                    ? 'bg-purple-500 text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-purple-100 hover:text-purple-700'
+                }`}
+                title="New - Recently added stock"
+              >
+                New
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFollowStatusChange(item, 'Hot');
+                }}
+                className={`px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 ${
+                  item.followStatus === 'Hot' 
+                    ? 'bg-red-500 text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-red-100 hover:text-red-700'
+                }`}
+                title="Hot - Trending stock"
+              >
+                Hot
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFollowStatusChange(item, 'Hold');
+                }}
+                className={`px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 ${
+                  item.followStatus === 'Hold' 
+                    ? 'bg-green-500 text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-green-100 hover:text-green-700'
+                }`}
+                title="Hold - Holding position in this stock"
+              >
+                Hold
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFollowStatusChange(item, 'Funda');
+                }}
+                className={`px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 ${
+                  item.followStatus === 'Funda' 
+                    ? 'bg-blue-500 text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-blue-100 hover:text-blue-700'
+                }`}
+                title="Funda - Fundamental analysis based"
+              >
+                Funda
+              </button>
+            </div>
+            
+            {/* Separator */}
+            <div className="w-px h-6 bg-slate-300"></div>
+            
+            {/* Wishlist Option */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleWishlist(item);
+              }}
+              className={`px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 flex items-center space-x-1 ${
+                item.add_to_wishlist 
+                  ? 'bg-yellow-500 text-white shadow-sm' 
+                  : 'text-slate-600 hover:bg-yellow-100 hover:text-yellow-700 border border-slate-200'
+              }`}
+              title={item.add_to_wishlist ? "Remove from Wishlist" : "Add to Wishlist"}
             >
-              {item.followStatus}
-            </Badge>
-          )}
+              <StarIcon className="w-3 h-3" filled={item.add_to_wishlist} />
+              <span>{item.add_to_wishlist ? 'Wishlist' : 'Wish'}</span>
+            </button>
+          </div>
         </div>
       ),
     },
@@ -248,6 +439,26 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       sortable: true,
       render: (value) => formatDate(value),
       className: 'text-sm text-slate-600',
+    },
+    {
+      field: 'sector',
+      label: 'Sector',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm text-slate-900">
+          {value || 'N/A'}
+        </span>
+      ),
+    },
+    {
+      field: 'industry',
+      label: 'Industry',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm text-slate-900">
+          {value || 'N/A'}
+        </span>
+      ),
     },
     {
       field: 'close',
@@ -346,78 +557,104 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       field: 'actions',
       label: 'Actions',
       render: (_, item) => (
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-2">
           <ActionButton
-            variant="ghost"
-            size="sm"
             onClick={() => handleViewDetails(item, 'news')}
+            leftIcon={<EyeIcon className="h-4 w-4" />}
+            variant="ghost"
+            size="sm"
+            className="!text-blue-500 hover:!bg-blue-50 hover:!text-blue-600"
           >
-            <EyeIcon className="h-4 w-4 text-blue-500" />
+            News
           </ActionButton>
           
           <ActionButton
-            variant="ghost"
-            size="sm"
             onClick={() => handleViewDetails(item, 'notes')}
+            leftIcon={<EyeIcon className="h-4 w-4" />}
+            variant="ghost"
+            size="sm"
+            className="!text-green-500 hover:!bg-green-50 hover:!text-green-600"
           >
-            <EyeIcon className="h-4 w-4 text-green-500" />
+            Notes
           </ActionButton>
           
           <ActionButton
-            variant="ghost"
-            size="sm"
             onClick={() => handleViewDetails(item, 'investment_case')}
+            leftIcon={<EyeIcon className="h-4 w-4" />}
+            variant="ghost"
+            size="sm"
+            className="!text-purple-500 hover:!bg-purple-50 hover:!text-purple-600"
           >
-            <EyeIcon className="h-4 w-4 text-purple-500" />
+            Case
           </ActionButton>
           
           <ActionButton
+            onClick={() => handleViewDetails(item, 'business_summary')}
+            leftIcon={<FileTextIcon className="h-4 w-4" />}
             variant="ghost"
             size="sm"
-            href={`https://www.tradingview.com/chart/?symbol=${item.symbol}`}
-            external
+            className="!text-orange-500 hover:!bg-orange-50 hover:!text-orange-600"
+            disabled={!item.business_summary}
           >
-            <TrendingUpIcon className="h-4 w-4 text-blue-500" />
+            Summary
           </ActionButton>
           
           <ActionButton
+            onClick={() => handleAddToBasket(item)}
+            leftIcon={<ShoppingBasketIcon className="h-4 w-4" />}
             variant="ghost"
             size="sm"
-            href={`https://www.screener.in/company/${item.symbol}/consolidated/`}
-            external
+            className="!text-purple-500 hover:!bg-purple-50 hover:!text-purple-600 !border !border-purple-200"
           >
-            <BarChart3Icon className="h-4 w-4 text-blue-500" />
+            Basket
           </ActionButton>
           
           <ActionButton
+            onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${item.symbol}`, '_blank')}
+            leftIcon={<TrendingUpIcon className="h-4 w-4" />}
             variant="ghost"
             size="sm"
-            onClick={() => handleToggleWishlist(item)}
+            className="!text-blue-500 hover:!bg-blue-50 hover:!text-blue-600"
           >
-            <StarIcon 
-              className={`h-4 w-4 ${
-                item.add_to_wishlist 
-                  ? 'text-yellow-400' 
-                  : 'text-gray-400'
-              }`}
-              filled={item.add_to_wishlist}
-            />
+            Chart
           </ActionButton>
           
           <ActionButton
+            onClick={() => window.open(`https://www.screener.in/company/${item.symbol}/consolidated/`, '_blank')}
+            leftIcon={<BarChart3Icon className="h-4 w-4" />}
             variant="ghost"
             size="sm"
+            className="!text-blue-500 hover:!bg-blue-50 hover:!text-blue-600"
+          >
+            Screener
+          </ActionButton>
+          
+          <ActionButton
+            onClick={() => handleEdit(item)}
+            leftIcon={<EditIcon className="h-4 w-4" />}
+            variant="ghost"
+            size="sm"
+            className="!text-green-500 hover:!bg-green-50 hover:!text-green-600"
+          >
+            Edit
+          </ActionButton>
+          
+          <ActionButton
             onClick={() => {
               setItemToDelete(item);
               setIsDeleteModalOpen(true);
             }}
+            leftIcon={<TrashIcon className="h-4 w-4" />}
+            variant="ghost"
+            size="sm"
+            className="!text-red-500 hover:!bg-red-50 hover:!text-red-600"
           >
-            <TrashIcon className="h-4 w-4 text-red-500" />
+            Delete
           </ActionButton>
         </div>
       ),
     },
-  ], [router, calculatePercentageChange, calculateFollowingPercentageChange, getTrendVariant, getFollowStatusVariant, handleViewDetails, handleToggleWishlist, setItemToDelete, setIsDeleteModalOpen]);
+  ], [router, calculatePercentageChange, calculateFollowingPercentageChange, getTrendVariant, getFollowStatusVariant, handleViewDetails, handleToggleWishlist, handleAddToBasket, setItemToDelete, setIsDeleteModalOpen]);
 
   // Memoized mobile card render for better performance
   const renderMobileCard = useCallback((item: WatchlistItem) => {
@@ -429,7 +666,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           <div className="flex items-center space-x-2">
             <button
               onClick={() => router.push(`/dashboard/analysis?symbol=${item.symbol}`)}
-              className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+              className="text-violet-600 hover:text-violet-800 hover:underline font-medium"
             >
               {item.symbol}
             </button>
@@ -500,9 +737,9 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
             variant="outline"
             size="xs"
             onClick={() => handleViewDetails(item, 'news')}
-            className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+            className="!bg-blue-50 !text-blue-700 !border-blue-200 hover:!bg-blue-100"
+            leftIcon={<EyeIcon className="h-3 w-3" />}
           >
-            <EyeIcon className="h-3 w-3 mr-1" />
             News
           </ActionButton>
           
@@ -510,21 +747,50 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
             variant="outline"
             size="xs"
             onClick={() => handleViewDetails(item, 'notes')}
-            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+            className="!bg-green-50 !text-green-700 !border-green-200 hover:!bg-green-100"
+            leftIcon={<EyeIcon className="h-3 w-3" />}
           >
-            <EyeIcon className="h-3 w-3 mr-1" />
             Notes
           </ActionButton>
           
           <ActionButton
             variant="outline"
             size="xs"
-            href={`https://www.tradingview.com/chart/?symbol=${item.symbol}`}
-            external
-            className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+            onClick={() => handleAddToBasket(item)}
+            className="!bg-purple-50 !text-purple-700 !border-purple-200 hover:!bg-purple-100 !border-2"
+            leftIcon={<ShoppingBasketIcon className="h-3 w-3" />}
           >
-            <TrendingUpIcon className="h-3 w-3 mr-1" />
+            Basket
+          </ActionButton>
+          
+          <ActionButton
+            variant="outline"
+            size="xs"
+            onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${item.symbol}`, '_blank')}
+            className="!bg-blue-50 !text-blue-700 !border-blue-200 hover:!bg-blue-100"
+            leftIcon={<TrendingUpIcon className="h-3 w-3" />}
+          >
             Chart
+          </ActionButton>
+          
+          <ActionButton
+            variant="outline"
+            size="xs"
+            onClick={() => window.open(`https://www.screener.in/company/${item.symbol}/consolidated/`, '_blank')}
+            className="!bg-blue-50 !text-blue-700 !border-blue-200 hover:!bg-blue-100"
+            leftIcon={<BarChart3Icon className="h-3 w-3" />}
+          >
+            Screener
+          </ActionButton>
+          
+          <ActionButton
+            variant="outline"
+            size="xs"
+            onClick={() => handleEdit(item)}
+            className="!bg-green-50 !text-green-700 !border-green-200 hover:!bg-green-100"
+            leftIcon={<EditIcon className="h-3 w-3" />}
+          >
+            Edit
           </ActionButton>
           
           <ActionButton
@@ -534,78 +800,58 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
               setItemToDelete(item);
               setIsDeleteModalOpen(true);
             }}
-            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+            className="!bg-red-50 !text-red-700 !border-red-200 hover:!bg-red-100"
+            leftIcon={<TrashIcon className="h-3 w-3" />}
           >
-            <TrashIcon className="h-3 w-3 mr-1" />
             Delete
           </ActionButton>
         </div>
       </>
     );
-  }, [router, calculatePercentageChange, getTrendVariant, handleToggleWishlist, handleViewDetails, setItemToDelete, setIsDeleteModalOpen]);
+  }, [router, calculatePercentageChange, getTrendVariant, handleToggleWishlist, handleViewDetails, handleAddToBasket, setItemToDelete, setIsDeleteModalOpen]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+      {/* <div className="flex items-center justify-between"> */}
+        {/* <div> */}
+          {/* <h1 className="text-2xl font-bold text-slate-900">
             {isWishlist ? 'Stock Wishlist' : 'Stock Watchlist'}
           </h1>
           <p className="text-sm text-slate-600">
             {isWishlist 
               ? 'Track stocks you want to invest in' 
               : 'Monitor your tracked stocks and price movements'}
-          </p>
-        </div>
+          </p> */}
+        {/* </div> */}
         
-        <ActionButton
+        {/* <ActionButton
           variant="primary"
           onClick={() => setIsAddDialogOpen(true)}
           leftIcon={<PlusIcon />}
         >
           Add Stock
-        </ActionButton>
-      </div>
+        </ActionButton> */}
+      {/* </div> */}
 
-      {/* Enhanced Search and Filters */}
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <SearchInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder={`Search ${isWishlist ? 'wishlist' : 'watchlist'}...`}
-            className="flex-1"
-            variant="modern"
-            size="lg"
-          />
-        </div>
-        
-        <FilterPanel
-          title="Advanced Filters"
-          isOpen={showFilters}
-          onToggle={() => setShowFilters(!showFilters)}
-          onClear={handleClearFilters}
-          variant="modern"
-          collapsible
-          activeFiltersCount={Object.values(filters).filter(value => value && String(value).trim() !== '').length}
-        >
-          <FilterSection
-            isVisible={true}
-            onToggle={() => {}}
-            fields={filterFields}
-            values={filters}
-            onChange={updateFilter}
-            onClear={handleClearFilters}
-            variant="modern"
-            showActiveChips={true}
-          />
-        </FilterPanel>
-      </div>
+      {/* Compact Search and Filters */}
+      <CompactFilterBar
+        fields={filterFields}
+        values={filters}
+        onChange={updateFilter}
+        onClear={handleClearFilters}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder={`Search ${isWishlist ? 'wishlist' : 'watchlist'}...`}
+        showSearch={true}
+        showQuickFilters={true}
+        quickFilterPresets={quickFilterPresets}
+        className="mb-6"
+      />
 
       {/* Data Table */}
       <DataTable
-        data={watchlist}
+        data={displayWatchlist}
         columns={columns}
         isLoading={isLoading}
         sortConfig={sortConfig}
@@ -613,6 +859,20 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           key: field,
           direction: sortConfig.key === field && sortConfig.direction === 'asc' ? 'desc' : 'asc',
         })}
+        onRowSelectionChange={(item, isSelected) => {
+          setSelectedRows(prev => {
+            const newSet = new Set(prev);
+            const key = typeof item._id === 'string' ? item._id : item._id?.$oid || item.symbol;
+            if (isSelected) {
+              newSet.add(key);
+            } else {
+              newSet.delete(key);
+            }
+            return newSet;
+          });
+        }}
+        selectedRows={selectedRows}
+        rowKey={(item) => typeof item._id === 'string' ? item._id : item._id?.$oid || item.symbol}
         mobileCardRender={renderMobileCard}
         emptyMessage={isWishlist ? "No stocks in wishlist" : "No stocks in watchlist"}
         striped
@@ -678,6 +938,226 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
           </div>
         </Modal>
       )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && itemToEdit && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          maxWidth="4xl"
+        >
+          <div className="bg-white p-6 rounded-xl shadow-lg max-h-[90vh] overflow-y-auto">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await handleEditSubmit();
+              }}
+              className="space-y-5"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold text-slate-900">Edit {itemToEdit.symbol}</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-2 rounded-full hover:bg-slate-100"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-700">
+                    Symbol
+                  </label>
+                  <input
+                    type="text"
+                    value={itemToEdit.symbol}
+                    disabled
+                    className="block w-full px-3 py-2 rounded-lg bg-slate-100 border border-slate-300 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-700">
+                    Follow Status
+                  </label>
+                  <select
+                    value={itemToEdit.followStatus || 'New'}
+                    onChange={(e) =>
+                      setItemToEdit((prev) => ({
+                        ...prev!,
+                        followStatus: e.target.value,
+                      }))
+                    }
+                    className="block w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="New">New</option>
+                    <option value="Hot">Hot</option>
+                    <option value="Hold">Hold</option>
+                    <option value="Funda">Funda</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-700">
+                    Current Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={itemToEdit.current_price}
+                    onChange={(e) =>
+                      setItemToEdit((prev) => ({
+                        ...prev!,
+                        current_price: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="block w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-700">
+                    Following Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={itemToEdit.following_price}
+                    onChange={(e) =>
+                      setItemToEdit((prev) => ({
+                        ...prev!,
+                        following_price: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="block w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-slate-700">
+                    Current Volume
+                  </label>
+                  <input
+                    type="number"
+                    value={itemToEdit.current_volume}
+                    onChange={(e) =>
+                      setItemToEdit((prev) => ({
+                        ...prev!,
+                        current_volume: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="block w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1 text-slate-700">
+                  Trend
+                </label>
+                <select
+                  value={itemToEdit.trend || 'Neutral'}
+                  onChange={(e) =>
+                    setItemToEdit((prev) => ({
+                      ...prev!,
+                      trend: e.target.value,
+                    }))
+                  }
+                  className="block w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="Bullish">Bullish</option>
+                  <option value="Bearish">Bearish</option>
+                  <option value="Neutral">Neutral</option>
+                  <option value="Cautious">Cautious</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1 text-slate-700">
+                  Notes
+                </label>
+                <textarea
+                  value={itemToEdit.notes || ''}
+                  onChange={(e) =>
+                    setItemToEdit((prev) => ({
+                      ...prev!,
+                      notes: e.target.value,
+                    }))
+                  }
+                  placeholder="Add or edit notes about this stock..."
+                  rows={6}
+                  className="block w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-3">
+                <ActionButton
+                  variant="ghost"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </ActionButton>
+                <ActionButton
+                  variant="primary"
+                  onClick={handleEditSubmit}
+                >
+                  Save Changes
+                </ActionButton>
+              </div>
+            </form>
+          </div>
+        </Modal>
+      )}
+
+      {/* Add to Basket Modal */}
+      {itemToAddToBasket && (
+        <AddToBucketModal
+          isOpen={isAddToBasketModalOpen}
+          onClose={() => {
+            setIsAddToBasketModalOpen(false);
+            setItemToAddToBasket(null);
+          }}
+          onSuccess={() => {
+            setIsAddToBasketModalOpen(false);
+            setItemToAddToBasket(null);
+          }}
+          categories={[
+            'WEEK_52_HIGH',
+            'TRENDING',
+            'NEWLY_LISTED',
+            'TRENDING_NEWLY_LISTED',
+            'STRONG_FUNDAMENTAL',
+            'MY_FAVORITES',
+            'MY_PORTFOLIO',
+            'WATCHLIST',
+            'STRATEGY_CONSOLIDATION',
+            'STRATEGY_RESISTANCE_RETEST',
+            'STRATEGY_SUPPORT_RETEST',
+            'CONSOLIDATION_BREAKOUT_CONFIRMED',
+            'RESISTANCE_BREAKOUT_CONFIRMED',
+            'SUPPORT_BREAKOUT_CONFIRMED'
+          ]}
+          prefilledData={{
+            symbol: itemToAddToBasket.symbol,
+            company_name: itemToAddToBasket.symbol, // Using symbol as company name since company_name doesn't exist
+            date: itemToAddToBasket.created_at,
+            logged_price: itemToAddToBasket.current_price || itemToAddToBasket.close
+          }}
+        />
+      )}
+
+      {/* Symbol Details Modal */}
+      <SymbolDetailsModal
+        isOpen={isSymbolModalOpen}
+        symbol={symbolForDetails}
+        onClose={() => {
+          setIsSymbolModalOpen(false);
+          setSymbolForDetails(undefined);
+        }}
+      />
     </div>
   );
 };
@@ -688,7 +1168,7 @@ const formatDate = (dateString: string | undefined) => {
   return new Date(dateString).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
-    timeZone: 'UTC',
+    year: 'numeric',
   });
 };
 

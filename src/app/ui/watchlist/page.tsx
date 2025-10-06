@@ -20,7 +20,7 @@ export default function WatchlistPage() {
     <Feature 
       title="Watchlist"
       subtitle="Browse and analyze equities that you added to your watchlist"
-      headerActions={headerActions}
+      // headerActions={headerActions}
       icon={<WatchlistIcon />}
     >
       <WatchlistContainer />

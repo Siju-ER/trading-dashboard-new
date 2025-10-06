@@ -56,7 +56,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
   }, [values, fields]);
 
   const renderField = (field: FilterField) => {
-    const baseClassName = "w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-slate-300";
+    const baseClassName = "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-slate-300";
     const hasValue = values[field.name] && String(values[field.name]).trim() !== '';
     
     switch (field.type) {
@@ -75,7 +75,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 </option>
               ))}
             </select>
-            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
           </div>
         );
       
@@ -196,18 +196,18 @@ const FilterSection: React.FC<FilterSectionProps> = ({
 
   return (
     <div className={variantStyles[variant]}>
-      {/* Enhanced Filter Toggle Button */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Compact Filter Toggle Button */}
+      <div className="flex items-center justify-between mb-3">
         <button
           onClick={onToggle}
-          className="group flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/30 text-slate-700 transition-all duration-200 shadow-sm hover:shadow-md"
+          className="group flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/30 text-slate-700 transition-all duration-200 shadow-sm hover:shadow-md"
         >
-          <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
-            <FilterIcon className="w-4 h-4" />
+          <div className="p-1.5 rounded-md bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
+            <FilterIcon className="w-3 h-3" />
           </div>
-          <span className="font-medium">Advanced Filters</span>
+          <span className="font-medium text-sm">Advanced Filters</span>
           {activeFilters.length > 0 && (
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
               {activeFilters.length}
             </span>
           )}
@@ -216,9 +216,9 @@ const FilterSection: React.FC<FilterSectionProps> = ({
         {activeFilters.length > 0 && (
           <button
             onClick={onClear}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all duration-200"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-all duration-200"
           >
-            <XIcon className="w-4 h-4" />
+            <XIcon className="w-3 h-3" />
             Clear All
           </button>
         )}
@@ -226,24 +226,24 @@ const FilterSection: React.FC<FilterSectionProps> = ({
 
       {/* Active Filter Chips */}
       {showActiveChips && activeFilters.length > 0 && (
-        <div className="mb-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckIcon className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-800">Active Filters</span>
+        <div className="mb-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+          <div className="flex items-center gap-1.5 mb-2">
+            <CheckIcon className="w-3 h-3 text-blue-600" />
+            <span className="text-xs font-medium text-blue-800">Active Filters</span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {activeFilters.map(getActiveFilterChip)}
           </div>
         </div>
       )}
       
-      {/* Enhanced Filter Options */}
+      {/* Compact Filter Options */}
       {isVisible && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {fields.map((field) => (
-              <div key={field.name} className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <div key={field.name} className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                   {field.icon}
                   {field.label}
                 </label>
@@ -252,9 +252,9 @@ const FilterSection: React.FC<FilterSectionProps> = ({
             ))}
           </div>
           
-          {/* Enhanced Filter Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-200">
-            <div className="text-sm text-slate-600">
+          {/* Compact Filter Actions */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-slate-200">
+            <div className="text-xs text-slate-600">
               {activeFilters.length > 0 ? (
                 <span className="font-medium text-blue-600">{activeFilters.length} filter{activeFilters.length !== 1 ? 's' : ''} applied</span>
               ) : (
@@ -262,15 +262,15 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               )}
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {customActions}
               
               {onApply && (
                 <button
                   onClick={onApply}
-                  className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-1.5 text-sm"
                 >
-                  <CheckIcon className="w-4 h-4" />
+                  <CheckIcon className="w-3 h-3" />
                   Apply Filters
                 </button>
               )}

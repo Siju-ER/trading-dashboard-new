@@ -176,8 +176,10 @@ import { useApiData } from '@/lib/hooks/useApiData';
 import { API_BASE_URL } from '@/config';
 import SearchInput from '@/components/shared/filters/SearchInput';
 import FilterSection from '@/components/shared/filters/FilterSection';
+import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
 import DataTable, { Column } from '@/components/shared/table/DataTable';
 import Pagination from '@/components/shared/pagination/Pagination';
+import { BarChart3Icon } from '@/components/shared/icons';
 
 interface EquityItem {
   symbol: string;
@@ -230,6 +232,35 @@ const EquityContainer: React.FC = () => {
       label: 'Listed Date',
       type: 'date' as const,
     },
+  ];
+
+  // Quick filter presets for equities
+  const quickFilterPresets = [
+    {
+      label: 'Technology',
+      values: { sector: 'Technology' },
+      icon: <BarChart3Icon className="w-3 h-3" />
+    },
+    {
+      label: 'Banking',
+      values: { sector: 'Banking' },
+      icon: <BarChart3Icon className="w-3 h-3" />
+    },
+    {
+      label: 'Pharma',
+      values: { sector: 'Pharmaceuticals' },
+      icon: <BarChart3Icon className="w-3 h-3" />
+    },
+    {
+      label: 'Auto',
+      values: { sector: 'Automobile' },
+      icon: <BarChart3Icon className="w-3 h-3" />
+    },
+    {
+      label: 'Reset',
+      values: { sector: '', industry: '', listed_date: '' },
+      icon: <BarChart3Icon className="w-3 h-3" />
+    }
   ];
 
   // Table column definitions
@@ -335,26 +366,20 @@ const EquityContainer: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <SearchInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Search equities..."
-            className="flex-1"
-          />
-          
-          <FilterSection
-            isVisible={showFilters}
-            onToggle={() => setShowFilters(!showFilters)}
-            fields={filterFields}
-            values={filters}
-            onChange={updateFilter}
-            onClear={handleClearFilters}
-          />
-        </div>
-      </div>
+      {/* Compact Search and Filters */}
+      <CompactFilterBar
+        fields={filterFields}
+        values={filters}
+        onChange={updateFilter}
+        onClear={handleClearFilters}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search equities..."
+        showSearch={true}
+        showQuickFilters={true}
+        quickFilterPresets={quickFilterPresets}
+        className="mb-6"
+      />
       
       {/* Data Table */}
       <DataTable

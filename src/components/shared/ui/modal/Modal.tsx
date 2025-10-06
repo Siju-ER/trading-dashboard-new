@@ -84,14 +84,18 @@ const Modal: React.FC<ModalProps> = ({
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           className={cn(
-            'fixed inset-0 bg-black bg-opacity-50 transition-opacity',
+            'fixed inset-0 backdrop-blur-sm transition-all duration-300 ease-out',
             overlayClassName
           )}
           onClick={closeOnOverlayClick ? onClose : undefined}
         />
         <div
           className={cn(
-            'relative w-full mx-auto',
+            'relative w-full mx-auto transform transition-all duration-300 ease-out scale-100 opacity-100',
+            'bg-gradient-to-br from-white via-white to-gray-50 bg-opacity-95 backdrop-blur-xl',
+            'border border-white border-opacity-60 shadow-2xl shadow-gray-500 shadow-opacity-25',
+            'rounded-3xl overflow-hidden',
+            'before:absolute before:inset-0 before:bg-gradient-to-br before:from-white before:to-transparent before:opacity-50 before:pointer-events-none',
             maxWidthClasses[maxWidth],
             heightClasses,
             className
@@ -100,7 +104,7 @@ const Modal: React.FC<ModalProps> = ({
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-md"
+              className="absolute top-6 right-6 z-10 p-3 rounded-full bg-gradient-to-br from-white to-gray-100 bg-opacity-90 backdrop-blur-md text-gray-600 hover:text-gray-800 hover:from-gray-50 hover:to-gray-200 transition-all duration-300 shadow-xl border border-white border-opacity-40 hover:shadow-2xl hover:scale-105"
               aria-label="Close modal"
             >
               <XIcon className="w-5 h-5" />

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/config';
 import SearchInput from '@/components/shared/filters/SearchInput';
 import FilterSection from '@/components/shared/filters/FilterSection';
+import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
 import DataTable, { Column } from '@/components/shared/table/DataTable';
 import ActionButton from '@/components/shared/ui/button/ActionButton';
 import Badge from '@/components/shared/ui/badge/Badge';
@@ -33,6 +34,7 @@ interface DeliveryPeakRecord {
 const DeliveryPeaksRSIRange: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<DeliveryPeakRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -124,21 +126,20 @@ const DeliveryPeaksRSIRange: React.FC = () => {
 };
 
   const handleClearFilters = () => {
-    setFilters({
-      target_date: availableDates[0] || '',
-      period: 6,
-      rsi_threshold: 2,
-      rsi_period: 14,
-      sma_period: 14,
-      delivery_type: 'delivery_volume'
-    });
+    // Clear all filters
+    updateFilter('target_date', '');
+    updateFilter('delivery_type', '');
+    updateFilter('period', '');
+    
+    // Clear search term
+    setSearchTerm('');
   };
 
   // Filter field definitions
   const filterFields = [
     {
       name: 'target_date',
-      label: 'Target Date',
+      label: 'Date',
       type: 'select' as const,
       placeholder: 'Select Date',
       options: availableDates.map(date => ({
@@ -148,7 +149,7 @@ const DeliveryPeaksRSIRange: React.FC = () => {
     },
     {
       name: 'delivery_type',
-      label: 'Delivery Type',
+      label: 'Type',
       type: 'select' as const,
       placeholder: 'Select Type',
       options: [
@@ -159,34 +160,16 @@ const DeliveryPeaksRSIRange: React.FC = () => {
     {
       name: 'period',
       label: 'Period',
-      type: 'number' as const,
-      placeholder: 'Enter period',
-      min: 1,
-      max: 30,
-    },
-    {
-      name: 'rsi_threshold',
-      label: 'RSI Threshold',
-      type: 'number' as const,
-      placeholder: 'Enter threshold',
-      min: 1,
-      max: 100,
-    },
-    {
-      name: 'rsi_period',
-      label: 'RSI Period',
-      type: 'number' as const,
-      placeholder: 'Enter RSI period',
-      min: 1,
-      max: 50,
-    },
-    {
-      name: 'sma_period',
-      label: 'SMA Period',
-      type: 'number' as const,
-      placeholder: 'Enter SMA period',
-      min: 1,
-      max: 50,
+      type: 'select' as const,
+      placeholder: 'Select Period',
+      options: [
+        { value: '3', label: '3 Days' },
+        { value: '6', label: '6 Days' },
+        { value: '10', label: '10 Days' },
+        { value: '15', label: '15 Days' },
+        { value: '20', label: '20 Days' },
+        { value: '30', label: '30 Days' },
+      ],
     },
   ];
 
@@ -237,7 +220,7 @@ const DeliveryPeaksRSIRange: React.FC = () => {
       render: (value, record) => (
         <button
           onClick={() => router.push(`/dashboard/scanner?tab=support-resistance&symbol=${record.symbol}`)}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
         >
           {value}
         </button>
@@ -248,7 +231,7 @@ const DeliveryPeaksRSIRange: React.FC = () => {
       label: 'Price',
       sortable: true,
       render: (value) => (
-        <span className="font-medium text-slate-900 dark:text-white">
+        <span className="font-medium text-slate-900">
           ₹{value.toFixed(2)}
         </span>
       ),
@@ -258,14 +241,14 @@ const DeliveryPeaksRSIRange: React.FC = () => {
       label: 'Volume',
       sortable: true,
       render: (value) => formatNumber(value),
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
     {
       field: 'delivery_volume',
       label: 'Delivery Volume',
       sortable: true,
       render: (value) => formatNumber(value),
-      className: 'text-sm text-slate-600 dark:text-slate-300',
+      className: 'text-sm text-slate-600',
     },
     {
       field: 'delivery_percentage',
@@ -292,7 +275,7 @@ const DeliveryPeaksRSIRange: React.FC = () => {
       label: 'RSI SMA',
       sortable: true,
       render: (_, record) => (
-        <span className="font-medium text-slate-900 dark:text-white">
+        <span className="font-medium text-slate-900">
           {record.rsi.rsi_sma.toFixed(2)}
         </span>
       ),
@@ -312,7 +295,7 @@ const DeliveryPeaksRSIRange: React.FC = () => {
       label: 'RSI SMA TA',
       sortable: true,
       render: (_, record) => (
-        <span className="font-medium text-slate-900 dark:text-white">
+        <span className="font-medium text-slate-900">
           {record.rsi.rsi_sma_ta.toFixed(2)}
         </span>
       ),
@@ -335,16 +318,16 @@ const DeliveryPeaksRSIRange: React.FC = () => {
       <div className="flex justify-between items-center mb-2">
         <button
           onClick={() => router.push(`/dashboard/scanner?tab=support-resistance&symbol=${record.symbol}`)}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium"
+          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
         >
           {record.symbol}
         </button>
-        <span className="text-sm font-medium text-slate-900 dark:text-white">
+        <span className="text-sm font-medium text-slate-900">
           ₹{record.close.toFixed(2)}
         </span>
       </div>
       
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 dark:text-slate-400 mb-3">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 mb-3">
         <div>
           <span className="font-medium">Volume:</span> {formatNumber(record.volume)}
         </div>
@@ -378,59 +361,47 @@ const DeliveryPeaksRSIRange: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Delivery Peaks In RSI Range
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Analyze stocks with delivery peaks within specific RSI ranges
-          </p>
-        </div>
-        
-        <ActionButton
-          variant="outline"
-          onClick={fetchDeliveryPeaksRSI}
-          leftIcon={<RefreshCwIcon className={loading ? 'animate-spin' : ''} />}
-          disabled={loading}
-        >
-          Refresh
-        </ActionButton>
-      </div>
 
-      {/* Search and Filters */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <SearchInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Search symbols..."
-            className="flex-1"
-          />
-        </div>
-        
-        <FilterPanel
-          title="Advanced Filters"
-          isOpen={showFilters}
-          onToggle={() => setShowFilters(!showFilters)}
-          onClear={handleClearFilters}
-          variant="bordered"
-          collapsible
-        >
-          <FilterSection
-            isVisible={true}
-            onToggle={() => {}}
-            fields={filterFields}
-            values={filters}
-            onChange={updateFilter}
-            onClear={handleClearFilters}
-          />
-        </FilterPanel>
-      </div>
+
+      {/* Compact Search and Filters */}
+      <CompactFilterBar
+        fields={filterFields}
+        values={filters}
+        onChange={updateFilter}
+        onClear={handleClearFilters}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search symbols..."
+        showSearch={true}
+        showQuickFilters={true}
+        quickFilterPresets={[
+          {
+            label: 'Today',
+            values: { target_date: availableDates[0] || '' },
+            icon: <CalendarIcon className="w-3 h-3" />
+          },
+          {
+            label: 'High Volume',
+            values: { delivery_type: 'delivery_volume' },
+            icon: <BarChart3Icon className="w-3 h-3" />
+          },
+          {
+            label: 'High %',
+            values: { delivery_type: 'delivery_percentage' },
+            icon: <ActivityIcon className="w-3 h-3" />
+          },
+          {
+            label: 'Week',
+            values: { period: '6' },
+            icon: <TrendingUpIcon className="w-3 h-3" />
+          }
+        ]}
+        className="mb-6"
+      />
 
       {/* Error Display */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg flex items-center gap-2">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2">
           <AlertCircleIcon className="h-5 w-5" />
           <div>
             <p className="font-medium">Error loading data</p>
@@ -441,55 +412,55 @@ const DeliveryPeaksRSIRange: React.FC = () => {
 
       {/* Summary Stats */}
       {!loading && !error && filteredRecords.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <TrendingUpIcon className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <TrendingUpIcon className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Records</p>
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">{filteredRecords.length}</p>
+                <p className="text-sm font-medium text-slate-500">Total Records</p>
+                <p className="text-lg font-semibold text-slate-900">{filteredRecords.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <BarChart3Icon className="h-6 w-6 text-green-600 dark:text-green-300" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <BarChart3Icon className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Avg RSI</p>
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                <p className="text-sm font-medium text-slate-500">Avg RSI</p>
+                <p className="text-lg font-semibold text-slate-900">
                   {(filteredRecords.reduce((sum, r) => sum + r.rsi.rsi, 0) / filteredRecords.length).toFixed(2)}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                <ActivityIcon className="h-6 w-6 text-purple-600 dark:text-purple-300" />
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <ActivityIcon className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Avg Delivery %</p>
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                <p className="text-sm font-medium text-slate-500">Avg Delivery %</p>
+                <p className="text-lg font-semibold text-slate-900">
                   {(filteredRecords.reduce((sum, r) => sum + r.delivery_percentage, 0) / filteredRecords.length).toFixed(2)}%
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 border border-slate-200 dark:border-slate-700">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
             <div className="flex items-center">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                <SettingsIcon className="h-6 w-6 text-orange-600 dark:text-orange-300" />
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <SettingsIcon className="h-6 w-6 text-orange-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overbought (RSI greater 70)</p>
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                <p className="text-sm font-medium text-slate-500">Overbought (RSI greater 70)</p>
+                <p className="text-lg font-semibold text-slate-900">
                   {filteredRecords.filter(r => r.rsi.rsi > 70).length}
                 </p>
               </div>
@@ -508,6 +479,20 @@ const DeliveryPeaksRSIRange: React.FC = () => {
           key: field,
           direction: sortConfig.key === field && sortConfig.direction === 'asc' ? 'desc' : 'asc',
         })}
+        onRowSelectionChange={(item, isSelected) => {
+          setSelectedRows(prev => {
+            const newSet = new Set(prev);
+            const key = item.symbol;
+            if (isSelected) {
+              newSet.add(key);
+            } else {
+              newSet.delete(key);
+            }
+            return newSet;
+          });
+        }}
+        selectedRows={selectedRows}
+        rowKey={(item) => item.symbol}
         mobileCardRender={renderMobileCard}
         emptyMessage={`No delivery peaks found for ${formatDate(filters.target_date)}`}
       />

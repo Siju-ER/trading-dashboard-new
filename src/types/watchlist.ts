@@ -17,6 +17,14 @@ export interface WatchlistItem {
   add_to_wishlist?: boolean;
   created_at?: string;
   followStatus?: string;
+  sector?: string;
+  industry?: string;
+  business_summary?: string;
+  market_cap?: number;
+  country?: string;
+  previous_trend?: string;
+  categories?: string[];
+  updated_at?: string;
 }
 
 export interface WatchlistFilters {
