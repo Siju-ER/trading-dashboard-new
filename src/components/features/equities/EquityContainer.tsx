@@ -180,6 +180,7 @@ import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
 import DataTable, { Column } from '@/components/shared/table/DataTable';
 import Pagination from '@/components/shared/pagination/Pagination';
 import { BarChart3Icon } from '@/components/shared/icons';
+import SymbolLink from '@/components/shared/symbol/SymbolLink';
 
 interface EquityItem {
   symbol: string;
@@ -269,12 +270,7 @@ const EquityContainer: React.FC = () => {
       field: 'symbol',
       label: 'Symbol',
       render: (value, item) => (
-        <button
-          onClick={() => router.push(`/dashboard/analysis?symbol=${item.symbol}`)}
-          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-        >
-          {value}
-        </button>
+        <SymbolLink symbol={item.symbol} className="text-blue-600 hover:text-blue-800 hover:underline font-medium">{value}</SymbolLink>
       ),
     },
     {

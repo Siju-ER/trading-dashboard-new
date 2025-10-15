@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import SymbolLink from '@/components/shared/symbol/SymbolLink';
 import { useApiData } from '@/lib/hooks/useApiData';
 import { API_BASE_URL } from '@/config';
 import SearchInput from '@/components/shared/filters/SearchInput';
@@ -525,12 +526,7 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
             label: 'Symbol',
             sortable: true,
             render: (value, record) => (
-                <button
-                    onClick={() => router.push(`/dashboard/analysis?symbol=${record.symbol}`)}
-                    className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-                >
-                    {value}
-                </button>
+                <SymbolLink symbol={record.symbol} className="text-blue-700 hover:text-blue-900 hover:underline font-medium">{value}</SymbolLink>
             ),
         },
         {

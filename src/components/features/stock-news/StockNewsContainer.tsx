@@ -7,6 +7,7 @@ import Badge from '@/components/shared/ui/badge/Badge';
 import { SearchIcon, CalendarIcon, ChevronDownIcon, ChevronRightIcon, ExternalLinkIcon, AlertIcon, CheckCircleIcon, RefreshCwIcon, PlusIcon, XIcon, ShoppingBasketIcon } from '@/components/shared/icons';
 import ActionButton from '@/components/shared/ui/button/ActionButton';
 import AddToBasketModal from '@/components/features/my-bucket/AddToBucketModal';
+import SymbolLink from '@/components/shared/symbol/SymbolLink';
 import type { PrefilledData } from '@/types/my-bucket';
 import Modal from '@/components/shared/ui/modal/Modal';
 
@@ -316,7 +317,7 @@ const StockNewsContainer: React.FC = () => {
                       </button>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-slate-900">{g.symbol}</span>
+                          <SymbolLink symbol={g.symbol} className="text-sm font-semibold text-violet-700 hover:text-violet-900 hover:underline">{g.symbol}</SymbolLink>
                           <Badge variant="default"><span className="text-slate-800">{g.no_of_news}</span> news</Badge>
                           {isSelected && (
                             <span className="inline-flex items-center gap-1 text-violet-600 text-[11px] font-medium">

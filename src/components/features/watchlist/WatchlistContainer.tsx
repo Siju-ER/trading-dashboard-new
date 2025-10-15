@@ -10,7 +10,8 @@ import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
 import DataTable, { Column } from '@/components/shared/table/DataTable';
 import Pagination from '@/components/shared/pagination/Pagination';
 import Modal from '@/components/shared/ui/modal/Modal';
-import SymbolDetailsModal from '@/components/shared/ui/modal/SymbolDetailsModal';
+import { SymbolDetailsProvider } from '@/components/shared/symbol/SymbolDetailsContext';
+import SymbolLink from '@/components/shared/symbol/SymbolLink';
 import ActionButton from '@/components/shared/ui/button/ActionButton';
 import Badge from '@/components/shared/ui/badge/Badge';
 import FilterPanel from '@/components/shared/filters/FilterPanel';
@@ -42,8 +43,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
   const [isAddToBasketModalOpen, setIsAddToBasketModalOpen] = useState(false);
   const [itemToAddToBasket, setItemToAddToBasket] = useState<WatchlistItem | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
-  const [symbolForDetails, setSymbolForDetails] = useState<string | undefined>(undefined);
+  // Symbol details modal now managed globally via provider
 
   // Use your existing useApiData hook
   const {
@@ -338,17 +338,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
       sortable: true,
       render: (value, item) => (
         <div className="flex items-center space-x-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setSymbolForDetails(item.symbol);
-              setIsSymbolModalOpen(true);
-            }}
-            className="text-violet-600 hover:text-violet-800 hover:underline font-medium"
-            title="View equity details"
-          >
-            {value}
-          </button>
+          <SymbolLink symbol={item.symbol}>{value}</SymbolLink>
           <div className="flex items-center space-x-2">
             {/* Follow Status Options Group */}
             <div className="flex items-center space-x-0.5 px-1.5 py-0.5 rounded-md border border-slate-200 bg-slate-50">
@@ -811,6 +801,7 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
   }, [router, calculatePercentageChange, getTrendVariant, handleToggleWishlist, handleViewDetails, handleAddToBasket, setItemToDelete, setIsDeleteModalOpen]);
 
   return (
+    <SymbolDetailsProvider>
     <div className="space-y-6">
       {/* Header */}
       {/* <div className="flex items-center justify-between"> */}
@@ -1149,16 +1140,9 @@ const WatchlistContainer: React.FC<WatchlistContainerProps> = ({ isWishlist = fa
         />
       )}
 
-      {/* Symbol Details Modal */}
-      <SymbolDetailsModal
-        isOpen={isSymbolModalOpen}
-        symbol={symbolForDetails}
-        onClose={() => {
-          setIsSymbolModalOpen(false);
-          setSymbolForDetails(undefined);
-        }}
-      />
+      {/* Symbol Details Modal is mounted by SymbolDetailsProvider */}
     </div>
+    </SymbolDetailsProvider>
   );
 };
 

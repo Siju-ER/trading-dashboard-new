@@ -12,6 +12,7 @@ import AddToBasketModal from './AddToBucketModal';
 import { MyBucketItem } from '@/types/my-bucket';
 import { API_BASE_URL } from '@/config';
 import { cn } from '@/lib/utils/utils';
+import SymbolLink from '@/components/shared/symbol/SymbolLink';
 
 const MyBucketContainer: React.FC = () => {
   const [items, setItems] = useState<MyBucketItem[]>([]);
@@ -426,12 +427,7 @@ const MyBucketContainer: React.FC = () => {
       label: 'Symbol',
       sortable: true,
       render: (value: any, item: MyBucketItem) => (
-        <button
-          onClick={() => window.open(`/dashboard/analysis?symbol=${item.symbol}`, '_blank')}
-          className="text-violet-600 hover:text-violet-800 hover:underline font-medium"
-        >
-          {item.symbol}
-        </button>
+        <SymbolLink symbol={item.symbol} className="text-violet-700 hover:text-violet-900 hover:underline font-medium">{item.symbol}</SymbolLink>
       )
     },
     {
