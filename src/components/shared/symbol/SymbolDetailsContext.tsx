@@ -49,3 +49,6 @@ export const SymbolDetailsProvider: React.FC<ProviderProps> = ({ children }) => 
 export default SymbolDetailsContext;
 
 
+
+
+

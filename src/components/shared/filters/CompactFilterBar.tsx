@@ -274,8 +274,8 @@ const CompactFilterBar: React.FC<CompactFilterBarProps> = ({
           </div>
         )}
 
-        {/* Additional Filters - All remaining fields */}
-        {fields.slice(1).map((field) => (
+        {/* Additional Filters - All fields except the first if it's logged_date */}
+        {(fields.length > 0 && fields[0].name === 'logged_date' ? fields.slice(1) : fields).map((field) => (
           <div key={field.name} className="flex-shrink-0">
             {renderField(field)}
           </div>

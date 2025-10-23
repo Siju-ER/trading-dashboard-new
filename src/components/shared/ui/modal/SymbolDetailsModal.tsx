@@ -5,7 +5,7 @@ import Modal from '@/components/shared/ui/modal/Modal';
 import ActionButton from '@/components/shared/ui/button/ActionButton';
 import Badge from '@/components/shared/ui/badge/Badge';
 import { API_BASE_URL } from '@/config';
-import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon, TrendingDownIcon } from '@/components/shared/icons';
+import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon, TrendingDownIcon, ExternalLinkIcon } from '@/components/shared/icons';
 
 interface SymbolDetailsModalProps {
   isOpen: boolean;
@@ -170,6 +170,17 @@ const SymbolDetailsModal: React.FC<SymbolDetailsModalProps> = ({ isOpen, symbol,
     
     return current || fallback;
   };
+
+  // Build helpful external links
+  const tradingViewOverviewUrl: string | undefined = (() => {
+    const fromLatest = getData('metadata.url', undefined);
+    if (typeof fromLatest === 'string' && fromLatest) return fromLatest;
+    if (symbol) return `https://www.tradingview.com/symbols/NSE-${symbol}/`;
+    return undefined;
+  })();
+
+  const tijoriSlug: string | undefined = (details?.tijori_label?.slug) || getData('tijori_label.slug', undefined);
+  const tijoriUrl: string | undefined = tijoriSlug ? `https://www.tijorifinance.com/company/${tijoriSlug}/` : undefined;
 
   // Helper function to safely access nested data from any date entry
   const getDataFromEntry = (entry: any, path: string, fallback: any = 'N/A') => {
@@ -962,8 +973,8 @@ const SymbolDetailsModal: React.FC<SymbolDetailsModalProps> = ({ isOpen, symbol,
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="7xl">
-      <div className="bg-white rounded-xl shadow-lg w-full h-[90vh] flex flex-col">
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+      <div className="bg-white rounded-xl shadow-lg w-full h-[97vh] flex flex-col">
+        <div className="p-5 border-b border-gray-100 flex items-center flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <h3 className="text-xl font-bold text-slate-900 truncate">{symbol || 'Symbol'}</h3>
             {details?.symbol_info?.company_name && (
@@ -975,7 +986,77 @@ const SymbolDetailsModal: React.FC<SymbolDetailsModalProps> = ({ isOpen, symbol,
               </Badge>
             )}
           </div>
-          <ActionButton variant="outline" size="sm" onClick={onClose}>Close</ActionButton>
+        </div>
+
+        {/* External Links */}
+        <div className="px-5 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+          <div className="flex flex-wrap gap-2">
+            {/* Charts (TradingView chart) */}
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              href={`https://www.tradingview.com/chart/?symbol=${symbol || ''}`}
+              external
+              leftIcon={<TrendingUpIcon className="h-4 w-4" />}
+              className="!bg-blue-600 !text-white hover:!bg-blue-700 !border !border-blue-600"
+            >
+              Charts
+            </ActionButton>
+
+            {/* TradingView (Overview page) */}
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              href={tradingViewOverviewUrl || '#'}
+              external
+              leftIcon={<TrendingUpIcon className="h-4 w-4" />}
+              className="!bg-violet-600 !text-white hover:!bg-violet-700 !border !border-violet-600"
+            >
+              TradingView
+            </ActionButton>
+
+            {/* Screener */}
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              href={`https://www.screener.in/company/${symbol || ''}/consolidated/`}
+              external
+              leftIcon={<ExternalLinkIcon className="h-4 w-4" />}
+              className="!bg-emerald-600 !text-white hover:!bg-emerald-700 !border !border-emerald-600"
+            >
+              Screener
+            </ActionButton>
+
+            {/* Tijori */}
+            {tijoriUrl && (
+              <ActionButton
+                variant="ghost"
+                size="sm"
+                href={tijoriUrl}
+                external
+                leftIcon={<ExternalLinkIcon className="h-4 w-4" />}
+                className="!bg-amber-600 !text-white hover:!bg-amber-700 !border !border-amber-600"
+              >
+                Tijori
+              </ActionButton>
+            )}
+
+            {/* Company Website */}
+            {details?.company_profile?.website && (
+              <ActionButton
+                variant="ghost"
+                size="sm"
+                href={(details.company_profile.website as string).startsWith('http')
+                  ? details.company_profile.website
+                  : `https://${details.company_profile.website}`}
+                external
+                leftIcon={<ExternalLinkIcon className="h-4 w-4" />}
+                className="!bg-indigo-600 !text-white hover:!bg-indigo-700 !border !border-indigo-600"
+              >
+                Company Website
+              </ActionButton>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}

@@ -1038,14 +1038,6 @@ console.log('useApiData analysisRecords type:', typeof analysisRecords);
                                 {modalContent === 'summary' ? selectedRecord.summary : selectedRecord.conclusion}
                             </p>
                         </div>
-                        <div className="flex justify-end">
-                            <ActionButton
-                                variant="primary"
-                                onClick={() => setIsModalOpen(false)}
-                            >
-                                Close
-                            </ActionButton>
-                        </div>
                     </div>
                 </Modal>
             )}
