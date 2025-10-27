@@ -119,18 +119,14 @@ export interface BestCriteriaResponse {
 
 export interface ScreeningRunResponse {
   criteria_id: string;
-  criteria_name: string;
-  screening_type: string;
-  total_screened: number;
-  passed_count: number;
-  pass_rate: number;
-  category_breakdown: Record<string, number>;
-  screening_date: string;
+  summary: ScreeningSummary;
+  results: ScreenerResult[];
 }
 
 export interface ScreeningResultsResponse {
   criteria_id: string;
-  results: ResultData[];
+  summary: ScreeningSummary;
+  results: ScreenerResult[];
 }
 
 export interface PassedResultsResponse {

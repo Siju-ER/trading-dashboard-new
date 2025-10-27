@@ -1,7 +1,7 @@
 'use client';
 
 import React, { forwardRef, ReactNode } from 'react';
-import { cn } from '@/lib/utils/utils';
+import { cn } from '@/lib/utils';
 import { BaseFormProps } from '@/types/form';
 
 export interface SelectOption {
@@ -13,7 +13,7 @@ export interface SelectOption {
 
 export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'>, BaseFormProps {
   label?: string;
-  options: SelectOption[];
+  options?: SelectOption[];
   placeholder?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
@@ -32,7 +32,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(({
   label,
   error,
   helperText,
-  options,
+  options = [],
   placeholder,
   leftIcon,
   rightIcon,
@@ -100,7 +100,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(({
   const shouldShowClear = clearable && hasValue && !disabled;
 
   // Group options by group property
-  const groupedOptions = options.reduce((acc, option) => {
+  const groupedOptions = (options || []).reduce((acc, option) => {
     const group = option.group || 'default';
     if (!acc[group]) acc[group] = [];
     acc[group].push(option);
@@ -177,21 +177,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(({
             </option>
           )}
           
-          {hasGroups ? (
-            Object.entries(groupedOptions).map(([group, groupOptions]) => (
-              group === 'default' ? (
-                groupOptions.map((option) => (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                    disabled={option.disabled}
-                  >
-                    {option.label}
-                  </option>
-                ))
-              ) : (
-                <optgroup key={group} label={group}>
-                  {groupOptions.map((option) => (
+          {/* Render options from props if provided */}
+          {options && options.length > 0 ? (
+            hasGroups ? (
+              Object.entries(groupedOptions).map(([group, groupOptions]) => (
+                group === 'default' ? (
+                  groupOptions.map((option) => (
                     <option
                       key={option.value}
                       value={option.value}
@@ -199,20 +190,35 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(({
                     >
                       {option.label}
                     </option>
-                  ))}
-                </optgroup>
-              )
-            ))
+                  ))
+                ) : (
+                  <optgroup key={group} label={group}>
+                    {groupOptions.map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        disabled={option.disabled}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                )
+              ))
+            ) : (
+              options.map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={option.disabled}
+                >
+                  {option.label}
+                </option>
+              ))
+            )
           ) : (
-            options.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </option>
-            ))
+            /* Render children if no options provided */
+            props.children
           )}
         </select>
 

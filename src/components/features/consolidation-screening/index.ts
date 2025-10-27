@@ -2,3 +2,4 @@ export { default as ConsolidationCriteriaForm } from './ConsolidationCriteriaFor
 export { default as ConsolidationCriteriaDashboard } from './ConsolidationCriteriaDashboard';
 export { default as ConsolidationResultsDashboard } from './ConsolidationResultsDashboard';
 export { default as ConsolidationScreeningDemo } from './ConsolidationScreeningDemo';
+export { default as ConsolidationInfoModal } from './ConsolidationInfoModal';

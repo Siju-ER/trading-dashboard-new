@@ -117,9 +117,9 @@ The system supports 12 configurable parameters:
 
 The module integrates with the following API endpoints:
 
-- `POST /screening/criteria/consolidation` - Create criteria
+- `POST /screening/criteria/CONSOLIDATION` - Create criteria
 - `GET /screening/criteria/CONSOLIDATION` - Get all criteria
-- `POST /screening/run/consolidation/{criteria_id}` - Run screening
+- `POST /screening/run/CONSOLIDATION/{criteria_id}` - Run screening
 - `GET /screening/results/{criteria_id}` - Get results
 - `PUT /screening/criteria/{criteria_id}/rating` - Rate criteria
 - `PUT /screening/criteria/{criteria_id}/activate` - Activate criteria

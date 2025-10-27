@@ -24,6 +24,11 @@ export default function ConsolidationCriteriaDashboard({
 }: ConsolidationCriteriaDashboardProps) {
   const [ratingModal, setRatingModal] = useState<{ criteriaId: string; currentRating: number } | null>(null);
   const [newRating, setNewRating] = useState(0);
+  const [confirmModal, setConfirmModal] = useState<{ 
+    type: 'run' | 'deactivate' | 'activate';
+    criteriaId: string;
+    criteriaName: string;
+  } | null>(null);
 
   const activeCriteria = criteria.filter(c => c.is_active);
   const inactiveCriteria = criteria.filter(c => !c.is_active);
@@ -38,6 +43,35 @@ export default function ConsolidationCriteriaDashboard({
       onRateCriteria(ratingModal.criteriaId, newRating);
       setRatingModal(null);
     }
+  };
+
+  const handleConfirmAction = () => {
+    if (!confirmModal) return;
+    
+    switch (confirmModal.type) {
+      case 'run':
+        onRunScreening(confirmModal.criteriaId);
+        break;
+      case 'deactivate':
+        onToggleStatus(confirmModal.criteriaId, true);
+        break;
+      case 'activate':
+        onToggleStatus(confirmModal.criteriaId, false);
+        break;
+    }
+    setConfirmModal(null);
+  };
+
+  const handleRunScreening = (criteriaId: string, criteriaName: string) => {
+    setConfirmModal({ type: 'run', criteriaId, criteriaName });
+  };
+
+  const handleToggleStatus = (criteriaId: string, isActive: boolean, criteriaName: string) => {
+    setConfirmModal({ 
+      type: isActive ? 'deactivate' : 'activate', 
+      criteriaId, 
+      criteriaName 
+    });
   };
 
   const formatDate = (dateString: string | null) => {
@@ -75,28 +109,35 @@ export default function ConsolidationCriteriaDashboard({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-slate-500">Rating:</span>
-              <span className="ml-1 font-medium">{c.rating.toFixed(1)}/10</span>
+              <span className="ml-1 font-medium text-slate-900">{c.rating.toFixed(1)}/10</span>
             </div>
             <div>
               <span className="text-slate-500">Runs:</span>
-              <span className="ml-1 font-medium">{c.run_count}</span>
+              <span className="ml-1 font-medium text-slate-900">{c.run_count}</span>
             </div>
             <div>
               <span className="text-slate-500">Success Rate:</span>
-              <span className="ml-1 font-medium">{c.success_rate.toFixed(1)}%</span>
+              <span className="ml-1 font-medium text-slate-900">{c.success_rate.toFixed(1)}%</span>
             </div>
             <div>
               <span className="text-slate-500">Last Run:</span>
-              <span className="ml-1 font-medium">{formatTimeAgo(c.last_run_at)}</span>
+              <span className="ml-1 font-medium text-slate-900">{formatTimeAgo(c.last_run_at)}</span>
             </div>
           </div>
+          
+          {/* Last Run Date */}
+          {c.last_run_at && (
+            <div className="mt-2 text-xs text-slate-500">
+              Last Run Date: {formatDate(c.last_run_at)}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
         <Button
           size="sm"
-          onClick={() => onRunScreening(c.id)}
+          onClick={() => handleRunScreening(c.id, c.name)}
           className="bg-blue-600 hover:bg-blue-700"
         >
           Run Screening
@@ -127,7 +168,7 @@ export default function ConsolidationCriteriaDashboard({
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => onToggleStatus(c.id, c.is_active)}
+          onClick={() => handleToggleStatus(c.id, c.is_active, c.name)}
         >
           {c.is_active ? 'Deactivate' : 'Activate'}
         </Button>
@@ -262,6 +303,38 @@ export default function ConsolidationCriteriaDashboard({
                 onClick={submitRating}
               >
                 Save Rating
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+              Confirm Action
+            </h3>
+            <p className="text-slate-600 mb-6">
+              {confirmModal.type === 'run' && `Are you sure you want to run screening for "${confirmModal.criteriaName}"?`}
+              {confirmModal.type === 'deactivate' && `Are you sure you want to deactivate "${confirmModal.criteriaName}"?`}
+              {confirmModal.type === 'activate' && `Are you sure you want to activate "${confirmModal.criteriaName}"?`}
+            </p>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmAction}
+                className={confirmModal.type === 'run' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'}
+              >
+                {confirmModal.type === 'run' && 'Run Screening'}
+                {confirmModal.type === 'deactivate' && 'Deactivate'}
+                {confirmModal.type === 'activate' && 'Activate'}
               </Button>
             </div>
           </div>

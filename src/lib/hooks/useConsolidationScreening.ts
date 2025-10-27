@@ -47,7 +47,7 @@ export const useConsolidationCriteria = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/screening/criteria/consolidation`, {
+      const response = await fetch(`${API_BASE_URL}/screening/criteria/CONSOLIDATION`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export const useConsolidationCriteria = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/screening/criteria/consolidation`);
+      const response = await fetch(`${API_BASE_URL}/screening/criteria/CONSOLIDATION`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -99,7 +99,7 @@ export const useConsolidationCriteria = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/screening/criteria/consolidation/active`);
+      const response = await fetch(`${API_BASE_URL}/screening/criteria/CONSOLIDATION/active`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -122,7 +122,7 @@ export const useConsolidationCriteria = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/criteria/consolidation/best?limit=${limit}`);
+      const response = await fetch(`${API_BASE_URL}/criteria/CONSOLIDATION/best?limit=${limit}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -239,7 +239,7 @@ export const useConsolidationScreening = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/screening/run/consolidation/${criteriaId}`, {
+      const response = await fetch(`${API_BASE_URL}/screening/run/CONSOLIDATION/${criteriaId}`, {
         method: 'POST',
       });
 

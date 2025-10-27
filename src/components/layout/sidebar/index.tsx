@@ -37,7 +37,7 @@ const menuItems = [
   { id: 'portfolio', label: 'Portfolio', icon: PortfolioIcon, path: '/portfolio' },
   { id: 'analysis', label: 'Analysis', icon: AnalysisIcon, path: '/ui/analysis' },
   { id: 'scanner', label: 'Scanner', icon: ScannerIcon, path: '/ui/scanner' },
-  { id: 'consolidation-screening', label: 'Consolidation Screening', icon: ConsolidationIcon, path: '/ui/consolidation-screening' },
+  { id: 'consolidation-screening', label: 'Consolidation', icon: ConsolidationIcon, path: '/ui/consolidation-screening' },
   { id: 'watchlist', label: 'Watchlist', icon: WatchlistIcon, path: '/ui/watchlist' },
   { id: 'breakout', label: 'Breakout', icon: BreakoutIcon, path: '/ui/breakouts' },
   { id: 'settings', label: 'Settings', icon: SettingsIcon, path: '/ui/settings' },

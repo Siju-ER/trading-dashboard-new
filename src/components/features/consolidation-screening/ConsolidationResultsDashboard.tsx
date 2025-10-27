@@ -2,9 +2,13 @@
 
 import { useState } from 'react';
 import { ScreeningRunResponse, ScreeningResultsResponse } from '@/types/consolidation-screening';
-import Button from '@/components/shared/form/Button';
+import DataTable, { Column } from '@/components/shared/table/DataTable';
+import SymbolLink from '@/components/shared/symbol/SymbolLink';
+import ActionButton from '@/components/shared/ui/button/ActionButton';
+import { ShoppingBasketIcon } from '@/components/shared/icons';
+import AddToBasketModal from '@/components/features/my-bucket/AddToBucketModal';
+import CompactFilterBar from '@/components/shared/filters/CompactFilterBar';
 import Badge from '@/components/shared/ui/badge/Badge';
-import Input from '@/components/shared/form/Input';
 
 interface ConsolidationResultsDashboardProps {
   screeningRun: ScreeningRunResponse;
@@ -19,35 +23,172 @@ export default function ConsolidationResultsDashboard({
   onBack,
   onRunAgain,
 }: ConsolidationResultsDashboardProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'score' | 'symbol' | 'category'>('score');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-  const categories = ['ALL', 'EXCELLENT', 'GOOD', 'FAIR', 'WEAK', 'FAILED'];
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'score', direction: 'desc' });
+  const [isAddToBasketModalOpen, setIsAddToBasketModalOpen] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<{ symbol: string; company_name: string } | null>(null);
   
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    category: '',
+  });
+
+  // Filter field definitions
+  const filterFields = [
+    {
+      name: 'category',
+      label: 'Category',
+      type: 'select' as const,
+      placeholder: 'All Categories',
+      options: [
+        { value: '', label: 'All Categories' },
+        { value: 'EXCELLENT', label: 'EXCELLENT' },
+        { value: 'GOOD', label: 'GOOD' },
+        { value: 'FAIR', label: 'FAIR' },
+        { value: 'WEAK', label: 'WEAK' },
+        { value: 'FAILED', label: 'FAILED' },
+      ],
+    },
+  ];
+
+  // Quick filter presets
+  const quickFilterPresets = [
+    {
+      label: 'Reset',
+      values: { category: '' },
+    }
+  ];
+
   // Filter and sort results
-  const filteredResults = screeningResults.results
+  const filteredResults = (screeningResults?.results || [])
     .filter(result => {
-      const matchesCategory = selectedCategory === 'ALL' || result.category === selectedCategory;
-      const matchesSearch = result.ticker.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !filters.category || result.category === filters.category;
+      const matchesSearch = result.symbol.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     })
     .sort((a, b) => {
       let comparison = 0;
-      switch (sortBy) {
+      switch (sortConfig.key) {
         case 'score':
           comparison = a.score - b.score;
           break;
         case 'symbol':
-          comparison = a.ticker.localeCompare(b.ticker);
+          comparison = a.symbol.localeCompare(b.symbol);
           break;
         case 'category':
           comparison = a.category.localeCompare(b.category);
           break;
+        case 'priceRange':
+          comparison = a.result_data.N_range_pct - b.result_data.N_range_pct;
+          break;
+        case 'volumeRatio':
+          comparison = a.result_data.vol_ratio_to_M - b.result_data.vol_ratio_to_M;
+          break;
       }
-      return sortOrder === 'asc' ? comparison : -comparison;
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
+
+  const handleSort = (field: string) => {
+    setSortConfig(prev => ({
+      key: field,
+      direction: prev.key === field && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  const handleAddToBasket = (symbol: string) => {
+    setSelectedStock({ symbol, company_name: symbol });
+    setIsAddToBasketModalOpen(true);
+  };
+
+  const handleFilterChange = (name: string, value: string) => {
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ category: '' });
+    setSearchTerm('');
+  };
+
+  // Define table columns
+  const columns: Column[] = [
+    {
+      field: 'symbol',
+      label: 'Symbol',
+      sortable: true,
+      render: (value: string) => (
+        <SymbolLink symbol={value} className="text-blue-600 hover:text-blue-800 font-medium">
+          {value}
+        </SymbolLink>
+      ),
+    },
+    {
+      field: 'score',
+      label: 'Score',
+      sortable: true,
+      render: (value: number) => (
+        <span className={`font-bold ${getScoreColor(value)}`}>
+          {value.toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      field: 'category',
+      label: 'Category',
+      sortable: true,
+      render: (value: string) => (
+        <Badge className={`${getCategoryColor(value)} border`}>
+          {value}
+        </Badge>
+      ),
+    },
+    {
+      field: 'consolidating_flag',
+      label: 'Status',
+      render: (value: boolean, item: any) => (
+        <Badge className={value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+          {value ? 'Consolidating' : 'Not Consolidating'}
+        </Badge>
+      ),
+    },
+    {
+      field: 'priceRange',
+      label: 'Price Range',
+      sortable: true,
+      render: (value: any, item: any) => (
+        <span className="text-slate-900">
+          {item.result_data.N_range_pct.toFixed(2)}%
+        </span>
+      ),
+    },
+    {
+      field: 'volumeRatio',
+      label: 'Volume Ratio',
+      sortable: true,
+      render: (value: any, item: any) => (
+        <span className="text-slate-900">
+          {(item.result_data.vol_ratio_to_M * 100).toFixed(1)}%
+        </span>
+      ),
+    },
+    {
+      field: 'actions',
+      label: 'Actions',
+      render: (value: any, item: any) => (
+        <ActionButton
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToBasket(item.symbol);
+          }}
+          leftIcon={<ShoppingBasketIcon className="h-4 w-4" />}
+          variant="ghost"
+          size="sm"
+          className="!text-purple-600 hover:!text-purple-700 !border !border-purple-200 hover:!border-purple-300 !bg-purple-50 hover:!bg-purple-100"
+        >
+          Add to Basket
+        </ActionButton>
+      ),
+    },
+  ];
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -68,257 +209,120 @@ export default function ConsolidationResultsDashboard({
     return 'text-red-600';
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const getCategoryBarColor = (category: string) => {
+    switch (category) {
+      case 'EXCELLENT': return 'bg-green-500';
+      case 'GOOD': return 'bg-blue-500';
+      case 'FAIR': return 'bg-yellow-500';
+      case 'WEAK': return 'bg-orange-500';
+      case 'FAILED': return 'bg-red-500';
+      default: return 'bg-slate-400';
+    }
   };
 
-  const exportResults = () => {
-    const csvContent = [
-      ['Symbol', 'Score', 'Category', 'Consolidating', 'Screening Date'].join(','),
-      ...filteredResults.map(result => [
-        result.ticker,
-        result.score.toFixed(2),
-        result.category,
-        result.consolidating_flag ? 'Yes' : 'No',
-        formatDate(result.screening_date)
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `consolidation-results-${screeningRun.criteria_name.replace(/\s+/g, '-')}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  // Early return if data is missing
+  if (!screeningRun || !screeningResults) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No Data Available</h3>
+          <p className="text-slate-600">Screening data is not available.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              Consolidation Screening Results
-            </h2>
-            <p className="text-slate-600">
-              Criteria: {screeningRun.criteria_name} • Last Run: {formatDate(screeningRun.screening_date)}
-            </p>
-          </div>
-          <div className="flex space-x-3">
-            <Button
-              variant="secondary"
-              onClick={() => onRunAgain(screeningRun.criteria_id)}
-            >
-              Run Again
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={exportResults}
-            >
-              Export CSV
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={onBack}
-            >
-              Back to Criteria
-            </Button>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-slate-900">{screeningRun.total_screened}</div>
-          <div className="text-sm text-slate-600">Total Screened</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-green-600">{screeningRun.passed_count}</div>
-          <div className="text-sm text-slate-600">Passed ({screeningRun.pass_rate.toFixed(1)}%)</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-red-600">
-            {screeningRun.total_screened - screeningRun.passed_count}
-          </div>
-          <div className="text-sm text-slate-600">Failed</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-blue-600">
-            {screeningResults.results.length > 0 
-              ? (screeningResults.results.reduce((sum, r) => sum + r.score, 0) / screeningResults.results.length).toFixed(1)
-              : '0.0'
-            }
-          </div>
-          <div className="text-sm text-slate-600">Avg Score</div>
-        </div>
-      </div>
-
-      {/* Category Breakdown */}
-      <div className="bg-white border border-slate-200 rounded-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Category Breakdown</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {Object.entries(screeningRun.category_breakdown).map(([category, count]) => {
-            const percentage = ((count / screeningRun.total_screened) * 100).toFixed(1);
-            return (
-              <div key={category} className="text-center">
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getCategoryColor(category)}`}>
-                  {category}
-                </div>
-                <div className="text-2xl font-bold text-slate-900 mt-2">{count}</div>
-                <div className="text-sm text-slate-600">{percentage}%</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder="Search by symbol..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category === 'ALL' ? 'All Categories' : category}
-                </option>
-              ))}
-            </select>
-            <select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [field, order] = e.target.value.split('-');
-                setSortBy(field as 'score' | 'symbol' | 'category');
-                setSortOrder(order as 'asc' | 'desc');
-              }}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="score-desc">Score (High to Low)</option>
-              <option value="score-asc">Score (Low to High)</option>
-              <option value="symbol-asc">Symbol (A-Z)</option>
-              <option value="symbol-desc">Symbol (Z-A)</option>
-              <option value="category-asc">Category (A-Z)</option>
-              <option value="category-desc">Category (Z-A)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Results Table */}
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Symbol
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Score
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Price Range
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Volume Ratio
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filteredResults.map((result) => (
-                <tr key={result.ticker} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-slate-900">{result.ticker}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className={`text-sm font-bold ${getScoreColor(result.score)}`}>
-                      {result.score.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge className={`${getCategoryColor(result.category)} border`}>
-                      {result.category}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge className={result.consolidating_flag ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {result.consolidating_flag ? 'Consolidating' : 'Not Consolidating'}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-900">
-                      {result.N_range_pct.toFixed(2)}%
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-900">
-                      {(result.vol_ratio_to_M * 100).toFixed(1)}%
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        // TODO: Implement detailed view modal
-                        console.log('View details for', result.ticker);
-                      }}
-                    >
-                      View Details
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Empty State */}
-        {filteredResults.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+      <div className="bg-white border border-slate-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div>
+              <div className="text-2xl font-bold text-slate-900">{screeningRun.summary.total}</div>
+              <div className="text-sm text-slate-600">Total Screened</div>
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No Results Found</h3>
-            <p className="text-slate-600">
-              {searchTerm || selectedCategory !== 'ALL' 
-                ? 'Try adjusting your filters or search terms.'
-                : 'No stocks passed the consolidation screening criteria.'
-              }
-            </p>
+            <div>
+              <div className="text-2xl font-bold text-green-600">{screeningRun.summary.passed}</div>
+              <div className="text-sm text-slate-600">Passed ({(screeningRun.summary.pass_rate * 100).toFixed(1)}%)</div>
+            </div>
           </div>
-        )}
+          <div className="flex items-center gap-4 text-sm text-slate-500">
+            {Object.entries(screeningRun.summary.categories).map(([category, count]) => (
+              <div key={category} className="flex items-center gap-1">
+                <div className={`w-3 h-3 rounded-sm ${getCategoryBarColor(category)}`} />
+                <span>{category}: {count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Results Count */}
-      <div className="mt-4 text-sm text-slate-600">
-        Showing {filteredResults.length} of {screeningResults.results.length} results
-      </div>
+      {/* Filters */}
+      <CompactFilterBar
+        fields={filterFields}
+        values={filters}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search by symbol..."
+        showSearch={true}
+        showQuickFilters={true}
+        quickFilterPresets={quickFilterPresets}
+        className="mb-6"
+      />
+      
+      {/* Data Table */}
+      <DataTable
+        data={filteredResults}
+        columns={columns}
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        rowKey={(item) => item.symbol}
+        emptyMessage={
+          searchTerm || filters.category
+            ? 'Try adjusting your filters or search terms.'
+            : 'No stocks passed the consolidation screening criteria.'
+        }
+        striped
+        stickyHeader
+        density="compact"
+      />
+
+      {/* Add to Basket Modal */}
+      <AddToBasketModal
+        isOpen={isAddToBasketModalOpen}
+        onClose={() => {
+          setIsAddToBasketModalOpen(false);
+          setSelectedStock(null);
+        }}
+        onSuccess={() => {
+          setIsAddToBasketModalOpen(false);
+          setSelectedStock(null);
+        }}
+        categories={[
+          'WEEK_52_HIGH',
+          'TRENDING',
+          'NEWLY_LISTED',
+          'TRENDING_NEWLY_LISTED',
+          'STRONG_FUNDAMENTAL',
+          'MY_FAVORITES',
+          'MY_PORTFOLIO',
+          'WATCHLIST',
+          'STRATEGY_CONSOLIDATION',
+          'STRATEGY_RESISTANCE_RETEST',
+          'STRATEGY_SUPPORT_RETEST',
+          'CONSOLIDATION_BREAKOUT_CONFIRMED',
+          'RESISTANCE_BREAKOUT_CONFIRMED',
+          'SUPPORT_BREAKOUT_CONFIRMED'
+        ]}
+        prefilledData={selectedStock ? {
+          symbol: selectedStock.symbol,
+          company_name: selectedStock.company_name,
+          date: new Date().toISOString().split('T')[0]
+        } : undefined}
+      />
     </div>
   );
 }
